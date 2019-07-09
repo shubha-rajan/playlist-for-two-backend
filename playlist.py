@@ -69,13 +69,11 @@ def get_saved_songs(user_id):
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
     
-    user.song_data.saved_songs= track_list
-    user.save()
     return(track_list)
 
-def get_top_songs(user_id, time_range,):
+def get_top_songs(user_id):
     user = User.objects(spotify_id=user_id).first()
-    url = 'https://api.spotify.com/v1/me/top/tracks?offset=0&limit=50&time_range={}'.format(time_range)
+    url = 'https://api.spotify.com/v1/me/top/tracks?offset=0&limit=50'
     track_list = []
     
     while url:
@@ -89,13 +87,11 @@ def get_top_songs(user_id, time_range,):
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    user.song_data.top_songs= track_list
-    user.save()
     return(track_list)
 
-def get_top_artists(user_id, time_range,):
+def get_top_artists(user_id):
     user = User.objects(spotify_id=user_id).first()
-    url = 'https://api.spotify.com/v1/me/top/artists?offset=0&limit=50&time_range={}'.format(time_range)
+    url = 'https://api.spotify.com/v1/me/top/artists?offset=0&limit=50'
     artist_list = []
     
     while url:
@@ -109,8 +105,7 @@ def get_top_artists(user_id, time_range,):
             artist_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    user.song_data.top_artists= artist_list
-    user.save()
+    
     return(artist_list)
 
 
@@ -130,12 +125,11 @@ def get_recently_played(user_id):
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    user.song_data.recently_played= track_list
-    user.save()
     return(track_list)
 
 @app.route('/login-user',methods=['POST'])
 def login_user():
+    User.objects().delete()
     params = {
         'client_id': os.getenv('SPOTIFY_CLIENT_ID'), 
         'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'), 
@@ -162,6 +156,12 @@ def login_user():
             refresh_token=json.loads(result.text)['refresh_token'])
         user.save()
 
-    get_song_list(user['spotify_id'])
+    user.song_data.saved_songs = get_saved_songs(user['spotify_id'])
+    user.song_data.top_songs= get_top_songs(user['spotify_id'])
+    user.song_data.top_artists= get_top_artists(user['spotify_id'])
+    user.song_data.recently_played = get_recently_played(user['spotify_id'])
+
+    user.save()
+
     return (user.to_json(), user_info.status_code)
     
