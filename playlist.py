@@ -24,7 +24,7 @@ class User(Document):
     refresh_token=StringField()
     image_links=ListField(DictField())
     friends= ListField(ReferenceField('Friendship'))
-    song_data= EmbeddedDocumentField(SongData)
+    song_data= EmbeddedDocumentField(SongData, default=SongData)
 
 
 class Friendship(Document):
@@ -48,7 +48,7 @@ def refresh_token(user_id):
 
     response = requests.post("https://accounts.spotify.com/api/token", data=params)
 
-    user['access_token']=json.loads(response.text)['access_token']
+    user.access_token=json.loads(response.text)['access_token']
     user.save()
     return(user.access_token)
 
@@ -60,7 +60,7 @@ def get_saved_songs(user_id):
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            'Authorization': 'Bearer {}'.format(user.access_token) 
             }
         ) 
         if response.status_code == 401:
@@ -68,11 +68,9 @@ def get_saved_songs(user_id):
         else:
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
-
-    if user['song_data']:
-        user['song_data']['saved_songs']= track_list
-    else
-        user['song_data'] = SongData(saved_songs=track_list)
+    
+    user.song_data.saved_songs= track_list
+    user.save()
     return(track_list)
 
 def get_top_songs(user_id, time_range,):
@@ -82,7 +80,7 @@ def get_top_songs(user_id, time_range,):
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            'Authorization': 'Bearer {}'.format(user.access_token) 
             }
         ) 
         if response.status_code == 401:
@@ -91,10 +89,8 @@ def get_top_songs(user_id, time_range,):
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    if user['song_data']:
-        user['song_data']['top_songs']= track_list
-    else
-        user['song_data'] = SongData(top_songs=track_list)
+    user.song_data.top_songs= track_list
+    user.save()
     return(track_list)
 
 def get_top_artists(user_id, time_range,):
@@ -104,7 +100,7 @@ def get_top_artists(user_id, time_range,):
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            'Authorization': 'Bearer {}'.format(user.access_token) 
             }
         ) 
         if response.status_code == 401:
@@ -113,10 +109,8 @@ def get_top_artists(user_id, time_range,):
             artist_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    if user['song_data']:
-        user['song_data']['top_artists']= artist_list
-    else
-        user['song_data'] = SongData(top_artists=artist_list)
+    user.song_data.top_artists= artist_list
+    user.save()
     return(artist_list)
 
 
@@ -127,7 +121,7 @@ def get_recently_played(user_id):
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            'Authorization': 'Bearer {}'.format(user.access_token) 
             }
         ) 
         if response.status_code == 401:
@@ -136,10 +130,8 @@ def get_recently_played(user_id):
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
 
-    if user['song_data']:
-        user['song_data']['recently_played']= track_list
-    else
-        user['song_data'] = SongData(recently_played=track_list)
+    user.song_data.recently_played= track_list
+    user.save()
     return(track_list)
 
 @app.route('/login-user',methods=['POST'])
@@ -166,6 +158,7 @@ def login_user():
             spotify_id=json.loads(user_info.text)['id'],
             image_links=json.loads(user_info.text)['images'],
             access_token=json.loads(result.text)['access_token'],
+            friends=[],
             refresh_token=json.loads(result.text)['refresh_token'])
         user.save()
 
