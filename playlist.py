@@ -17,8 +17,6 @@ class SongData(EmbeddedDocument):
     albums=DictField()
     genres=DictField()
 
-
-
 class User(Document):
     name= StringField(required=True)
     spotify_id= StringField(required=True)
@@ -27,9 +25,6 @@ class User(Document):
     image_links=ListField(DictField())
     friends= ListField(ReferenceField('Friendship'))
     song_data= EmbeddedDocumentField(SongData)
-
-
-
 
 
 class Friendship(Document):
@@ -42,6 +37,38 @@ class Playlist(Document):
     uri= StringField(required=True)
     owners= ListField(ReferenceField(User))
 
+def refresh_token(user_id):
+    user = User.objects(spotify_id=user_id).first() 
+    params={
+        'client_id': os.getenv('SPOTIFY_CLIENT_ID'), 
+        'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'), 
+        "grant_type":'refresh_token',
+        'refresh_token': user.refresh_token
+    }
+
+    response = requests.post("https://accounts.spotify.com/api/token", data=params)
+
+    user['access_token']=json.loads(response.text)['access_token']
+    user.save()
+    return(user.access_token)
+
+def get_song_list(user_id):
+    user = User.objects(spotify_id=user_id).first()
+    url = 'https://api.spotify.com/v1/me/tracks?offset=0&limit=50'
+    track_list = []
+    
+    while url:
+        response = requests.get(url, headers= {
+            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            }
+        ) 
+        
+        if response.status_code == 401:
+            refresh_token(user_id)
+        else:
+            track_list += json.loads(response.text)['items']
+            url = json.loads(response.text)['next']
+    return(track_list)
 
 
 @app.route('/')
@@ -74,5 +101,7 @@ def login_user():
             access_token=json.loads(result.text)['access_token'],
             refresh_token=json.loads(result.text)['refresh_token'])
         user.save()
+
+    get_song_list(user['spotify_id'])
     return (user.to_json(), user_info.status_code)
     

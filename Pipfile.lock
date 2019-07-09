@@ -115,13 +115,6 @@
             ],
             "version": "==1.12.0"
         },
-        "spotipy": {
-            "hashes": [
-                "sha256:4b05da481b5c5dd4d1da8c0f0d13ca805dde037db648d12be866244b19501ed1"
-            ],
-            "index": "pypi",
-            "version": "==2.4.4"
-        },
         "urllib3": {
             "hashes": [
                 "sha256:b246607a25ac80bedac05c6f282e3cdaf3afb65420fd024ac94435cabe6e18d1",
