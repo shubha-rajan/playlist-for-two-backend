@@ -11,21 +11,24 @@ app = Flask(__name__)
 connect('flaskapp')
 load_dotenv()
 
+class SongData(EmbeddedDocument):
+    songs=ListField(StringField())
+    artists=DictField()
+    albums=DictField()
+    genres=DictField()
+
+
 
 class User(Document):
     name= StringField(required=True)
     spotify_id= StringField(required=True)
     access_token=StringField()
     refresh_token=StringField()
-    image_links=ListField(StringField())
+    image_links=ListField(DictField())
     friends= ListField(ReferenceField('Friendship'))
-    song_data= EmbeddedDocumentField('SongData')
+    song_data= EmbeddedDocumentField(SongData)
 
-class SongData(EmbeddedDocument):
-    songs=ListField(StringField())
-    artists=DictField()
-    albums=DictField()
-    genres=DictField()
+
 
 
 
