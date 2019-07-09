@@ -5,17 +5,17 @@ import json
 import requests
 import os
 import datetime
-import spotipy as sp
+
 
 app = Flask(__name__)
 connect('flaskapp')
 load_dotenv()
 
 class SongData(EmbeddedDocument):
-    songs=ListField(StringField())
-    artists=DictField()
-    albums=DictField()
-    genres=DictField()
+    saved_songs=ListField(DictField())
+    recently_played=ListField(DictField())
+    top_songs=ListField(DictField())
+    top_artists=ListField(DictField())
 
 class User(Document):
     name= StringField(required=True)
@@ -52,7 +52,8 @@ def refresh_token(user_id):
     user.save()
     return(user.access_token)
 
-def get_song_list(user_id):
+
+def get_saved_songs(user_id):
     user = User.objects(spotify_id=user_id).first()
     url = 'https://api.spotify.com/v1/me/tracks?offset=0&limit=50'
     track_list = []
@@ -62,18 +63,84 @@ def get_song_list(user_id):
             'Authorization': 'Bearer {}'.format(user['access_token']) 
             }
         ) 
-        
         if response.status_code == 401:
             refresh_token(user_id)
         else:
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
+
+    if user['song_data']:
+        user['song_data']['saved_songs']= track_list
+    else
+        user['song_data'] = SongData(saved_songs=track_list)
     return(track_list)
 
+def get_top_songs(user_id, time_range,):
+    user = User.objects(spotify_id=user_id).first()
+    url = 'https://api.spotify.com/v1/me/top/tracks?offset=0&limit=50&time_range={}'.format(time_range)
+    track_list = []
+    
+    while url:
+        response = requests.get(url, headers= {
+            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            }
+        ) 
+        if response.status_code == 401:
+            refresh_token(user_id)
+        else:
+            track_list += json.loads(response.text)['items']
+            url = json.loads(response.text)['next']
 
-@app.route('/')
-def index():
-    return 'It\'s Flask!'
+    if user['song_data']:
+        user['song_data']['top_songs']= track_list
+    else
+        user['song_data'] = SongData(top_songs=track_list)
+    return(track_list)
+
+def get_top_artists(user_id, time_range,):
+    user = User.objects(spotify_id=user_id).first()
+    url = 'https://api.spotify.com/v1/me/top/artists?offset=0&limit=50&time_range={}'.format(time_range)
+    artist_list = []
+    
+    while url:
+        response = requests.get(url, headers= {
+            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            }
+        ) 
+        if response.status_code == 401:
+            refresh_token(user_id)
+        else:
+            artist_list += json.loads(response.text)['items']
+            url = json.loads(response.text)['next']
+
+    if user['song_data']:
+        user['song_data']['top_artists']= artist_list
+    else
+        user['song_data'] = SongData(top_artists=artist_list)
+    return(artist_list)
+
+
+def get_recently_played(user_id):
+    user = User.objects(spotify_id=user_id).first()
+    url = 'https://api.spotify.com/v1/me/player/recently-played?offset=0&limit=50'
+    track_list = []
+    
+    while url:
+        response = requests.get(url, headers= {
+            'Authorization': 'Bearer {}'.format(user['access_token']) 
+            }
+        ) 
+        if response.status_code == 401:
+            refresh_token(user_id)
+        else:
+            track_list += json.loads(response.text)['items']
+            url = json.loads(response.text)['next']
+
+    if user['song_data']:
+        user['song_data']['recently_played']= track_list
+    else
+        user['song_data'] = SongData(recently_played=track_list)
+    return(track_list)
 
 @app.route('/login-user',methods=['POST'])
 def login_user():
