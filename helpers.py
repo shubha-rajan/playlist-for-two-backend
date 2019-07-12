@@ -28,7 +28,7 @@ def get_listening_data(user_id, data_type):
         'saved_songs': 'https://api.spotify.com/v1/me/tracks?offset=0&limit=50',
         'top_songs': 'https://api.spotify.com/v1/me/top/tracks?offset=0&limit=50',
         'top_artists': 'https://api.spotify.com/v1/me/top/artists?offset=0&limit=50',
-        'recently_played': 'https://api.spotify.com/v1/me/player/recently-played?offset=0&limit=50'
+        'followed_artists': 'https://api.spotify.com/v1/me/following?type=artist&limit=50'
     }
     
     url = endpoints[data_type];
@@ -41,6 +41,9 @@ def get_listening_data(user_id, data_type):
         ) 
         if response.status_code == 401:
             refresh_token(user_id)
+        elif data_type =='followed_artists':
+            track_list += json.loads(response.text)['artists']['items']
+            url = json.loads(response.text)['artists']['next']
         else:
             track_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
@@ -52,5 +55,5 @@ def all_listening_data(user):
         user.song_data.saved_songs = get_listening_data(user['spotify_id'], 'saved_songs')
         user.song_data.top_songs= get_listening_data(user['spotify_id'], 'top_songs')
         user.song_data.top_artists= get_listening_data(user['spotify_id'], 'top_artists')
-        user.song_data.recently_played = get_listening_data(user['spotify_id'], 'recently_played')
+        user.song_data.recently_played = get_listening_data(user['spotify_id'], 'followed_artists')
         user.save()
