@@ -32,7 +32,7 @@ def get_listening_data(user_id, data_type):
     }
     
     url = endpoints[data_type];
-    track_list = []
+    returned_list = []
     
     while url:
         response = requests.get(url, headers= {
@@ -42,18 +42,53 @@ def get_listening_data(user_id, data_type):
         if response.status_code == 401:
             refresh_token(user_id)
         elif data_type =='followed_artists':
-            track_list += json.loads(response.text)['artists']['items']
+            returned_list += json.loads(response.text)['artists']['items']
             url = json.loads(response.text)['artists']['next']
         else:
-            track_list += json.loads(response.text)['items']
+            returned_list += json.loads(response.text)['items']
             url = json.loads(response.text)['next']
+
+
+    if data_type=='followed_artists' or data_type=='top_artists':
+        print(len(returned_list))
+        returned_list = [clean_artist_data(artist) for artist in returned_list]
+    elif data_type=='saved_songs':
+        print(len(returned_list))
+        returned_list = [clean_saved_songs_data(track) for track in returned_list]
+    elif data_type=='top_songs':
+        print(len(returned_list))
+        returned_list = [clean_top_songs_data(track) for track in returned_list]
+
+        
     
-    return(track_list)
+    return(returned_list)
 
 
-def all_listening_data(user): 
-        user.song_data.saved_songs = get_listening_data(user['spotify_id'], 'saved_songs')
-        user.song_data.top_songs= get_listening_data(user['spotify_id'], 'top_songs')
-        user.song_data.top_artists= get_listening_data(user['spotify_id'], 'top_artists')
-        user.song_data.recently_played = get_listening_data(user['spotify_id'], 'followed_artists')
-        user.save()
+def clean_artist_data(artist):
+    return({
+        'name': artist['name'],
+        'id': artist['id'],
+        'images': artist['images'],
+        'genres':artist['genres']
+    })
+
+
+def clean_saved_songs_data(track):
+    if 'track' in track:
+        track = {
+            'name': track['track']['name'],
+            'id': track['track']['id'],
+            'artists': map(lambda artist: artist['id'], track['track']['artists']),
+            'album':  track['track']['album']['id'],
+            'explicit': track['track']['explicit']
+        }
+    return(track)
+
+def clean_top_songs_data(track):
+    return({
+        'name': track['name'],
+        'id': track['id'],
+        'artists': map(lambda artist: artist['id'], track['artists']),
+        'album':  track['album']['id'],
+        'explicit': track['explicit']
+    })

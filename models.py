@@ -3,7 +3,7 @@ import datetime
 
 class SongData(EmbeddedDocument):
     saved_songs=ListField(DictField())
-    recently_played=ListField(DictField())
+    followed_artists=ListField(DictField())
     top_songs=ListField(DictField())
     top_artists=ListField(DictField())
 

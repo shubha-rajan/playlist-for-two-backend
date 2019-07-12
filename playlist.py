@@ -8,7 +8,7 @@ import os
 import mongoengine
 
 from .models import User, SongData, Friendship, Playlist
-from .helpers import refresh_token, all_listening_data, get_listening_data
+from .helpers import refresh_token, get_listening_data
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp')
@@ -16,8 +16,7 @@ load_dotenv()
 
 
 @app.route('/login-user',methods=['POST'])
-def login_user():
-    User.objects().delete() # Clear db so I can test new user creation. Will delete later.
+def login_user(): 
     params = {
         'client_id': os.getenv('SPOTIFY_CLIENT_ID'), 
         'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'), 
@@ -48,9 +47,7 @@ def login_user():
             refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
-        all_listening_data(user)
-    
-
+        
     result = {
             'name' : user.name,
             'spotify_id': user.spotify_id,
@@ -58,4 +55,18 @@ def login_user():
     }
 
     return (json.dumps(result), 200)
-    
+
+
+@app.route('/listening-history',methods=['GET'])
+def get_listening_history():    
+
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
+
+    user.song_data.saved_songs = get_listening_data(user['spotify_id'], 'saved_songs')
+    user.song_data.top_songs= get_listening_data(user['spotify_id'], 'top_songs')
+    user.song_data.top_artists= get_listening_data(user['spotify_id'], 'top_artists')
+    user.song_data.followed_artists = get_listening_data(user['spotify_id'], 'followed_artists')
+    user.save()
+
+    return (user.song_data.to_json(), 200)
