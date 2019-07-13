@@ -50,13 +50,10 @@ def get_listening_data(user_id, data_type):
 
 
     if data_type=='followed_artists' or data_type=='top_artists':
-        print(len(returned_list))
         returned_list = [clean_artist_data(artist) for artist in returned_list]
     elif data_type=='saved_songs':
-        print(len(returned_list))
         returned_list = [clean_saved_songs_data(track) for track in returned_list]
     elif data_type=='top_songs':
-        print(len(returned_list))
         returned_list = [clean_top_songs_data(track) for track in returned_list]
 
         

@@ -6,11 +6,11 @@ import os
 
 import mongoengine
 
-from .models import User, SongData, Friendship, Playlist
-from .helpers import refresh_token, get_listening_data
+from playlist.models import User, SongData, Friendship, Playlist
+from playlist.helpers import refresh_token, get_listening_data
 
 app = Flask(__name__)
-mongoengine.connect('flaskapp', host=os.getenv['MONGODB_URI'])
+mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
 load_dotenv()
 
 @app.route('/',methods=['GET'])
