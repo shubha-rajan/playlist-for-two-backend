@@ -11,6 +11,8 @@ python-dotenv = "*"
 gunicorn = "*"
 pylint-venv = "*"
 flask = "*"
+requests = "*"
+json = "*"
 
 [requires]
 python_version = "3.7"
