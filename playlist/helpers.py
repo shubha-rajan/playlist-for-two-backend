@@ -75,7 +75,7 @@ def clean_saved_songs_data(track):
         track = {
             'name': track['track']['name'],
             'id': track['track']['id'],
-            'artists': map(lambda artist: artist['id'], track['track']['artists']),
+            'artists': [artist['id'] for artist in track['track']['artists']],
             'album':  track['track']['album']['id'],
             'explicit': track['track']['explicit']
         }
@@ -85,7 +85,7 @@ def clean_top_songs_data(track):
     return({
         'name': track['name'],
         'id': track['id'],
-        'artists': map(lambda artist: artist['id'], track['artists']),
+        'artists': [artist['id'] for artist in track['artists']],
         'album':  track['album']['id'],
         'explicit': track['explicit']
     })
