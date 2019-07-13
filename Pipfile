@@ -10,6 +10,7 @@ mongoengine = "*"
 python-dotenv = "*"
 gunicorn = "*"
 pylint-venv = "*"
+flask = "*"
 
 [requires]
 python_version = "3.7"
