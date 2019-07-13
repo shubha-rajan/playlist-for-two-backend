@@ -11,7 +11,7 @@ from .models import User, SongData, Friendship, Playlist
 from .helpers import refresh_token, get_listening_data
 
 app = Flask(__name__)
-mongoengine.connect('flaskapp')
+mongoengine.connect('flaskapp', host=os.getenv['MONGODB_URI'])
 load_dotenv()
 
 
