@@ -1,5 +1,4 @@
 from flask import Flask, request, make_response
-
 from dotenv import load_dotenv
 import json
 import requests
@@ -14,6 +13,9 @@ app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv['MONGODB_URI'])
 load_dotenv()
 
+@app.route('/',methods=['GET'])
+def hello_flask():
+    return ("It's working!")
 
 @app.route('/login-user',methods=['POST'])
 def login_user(): 
