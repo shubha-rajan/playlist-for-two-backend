@@ -122,6 +122,9 @@ def accept_friend():
     else: 
         return ("You are not authorized to perform that action", 401)
 
-    
-
+    @app.route('/friends',methods=['GET'])
+    def get_friends():
+        user_id = request.form.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        return(user.friends.to_json, 200)
 
