@@ -57,7 +57,7 @@ def login_user():
             'name' : user.name,
             'spotify_id': user.spotify_id,
             'image_links':user.image_links,
-            'access_token': user.access_token;
+            'access_token': user.access_token
     }
 
     return (json.dumps(result), 200)
@@ -66,8 +66,9 @@ def login_user():
 @app.route('/listening-history',methods=['GET'])
 def get_listening_history():    
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
-
+    user = User.objects(spotify_id=user_id).first() 
+    
+    user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
     user.song_data.top_artists= get_listening_data(user_id, 'top_artists')
     user.song_data.followed_artists = get_listening_data(user_id, 'followed_artists')

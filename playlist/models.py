@@ -7,20 +7,22 @@ class SongData(EmbeddedDocument):
     top_songs=ListField(DictField())
     top_artists=ListField(DictField())
 
+class Friendship(EmbeddedDocument):
+    status= StringField(required=True, choices=("requested", "pending", "accepted"))
+    modified= DateTimeField(default=datetime.datetime.utcnow)
+    friend_id = StringField(required=True)
+
 class User(Document):
     name= StringField(required=True)
     spotify_id= StringField(required=True)
     access_token=StringField()
     refresh_token=StringField()
     image_links=ListField(DictField())
-    friends= ListField(EmbeddedDocumentField('Friendship'))
+    friends= ListField(EmbeddedDocumentField(Friendship))
     song_data= EmbeddedDocumentField(SongData, default=SongData)
 
 
-class Friendship(Document):
-    status= StringField(required=True, choices=("requested", "pending", "accepted"))
-    modified= DateTimeField(default=datetime.datetime.utcnow)
-    friend_id = StringField(required=True)
+
 
 
 class Playlist(Document):
