@@ -83,21 +83,24 @@ def request_friend():
     friend_id = request.form.get("friend_id")
 
     user = User.objects(spotify_id=user_id).first() 
+    requested = User.objects(spotify_id=friend_id).first()
 
     if user.access_token==request.headers.get("authorization"):
         user.friends.append(
             Friendship(
                     status='requested',
-                    friend_id=friend_id
+                    friend_id=friend_id,
+                    name=requested.name
             )
         )
         user.save()
 
-        requested = User.objects(spotify_id=friend_id).first()
+        
         requested.friends.append(
             Friendship(
                     status='pending',
-                    friend_id=user_id
+                    friend_id=user_id,
+                    name=user.name
             )
         )
         requested.save()

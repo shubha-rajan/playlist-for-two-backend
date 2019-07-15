@@ -11,6 +11,7 @@ class Friendship(EmbeddedDocument):
     status= StringField(required=True, choices=("requested", "pending", "accepted"))
     modified= DateTimeField(default=datetime.datetime.utcnow)
     friend_id = StringField(required=True)
+    name = StringField()
 
 class User(Document):
     name= StringField(required=True)
