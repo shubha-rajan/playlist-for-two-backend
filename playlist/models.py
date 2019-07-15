@@ -13,14 +13,14 @@ class User(Document):
     access_token=StringField()
     refresh_token=StringField()
     image_links=ListField(DictField())
-    friends= ListField(ReferenceField('Friendship'))
+    friends= ListField(EmbeddedDocumentField('Friendship'))
     song_data= EmbeddedDocumentField(SongData, default=SongData)
 
 
 class Friendship(Document):
     status= StringField(required=True, choices=("requested", "pending", "accepted"))
     modified= DateTimeField(default=datetime.datetime.utcnow)
-    user= ReferenceField(User)
+    friend_id = StringField(required=True)
 
 
 class Playlist(Document):

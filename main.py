@@ -73,3 +73,40 @@ def get_listening_history():
 
     return (user.song_data.to_json(), 200)
 
+
+@app.route('/request-friend',methods=['POST'])
+def request_friend():
+    user_id = request.form.get("user_id")
+    friend_id = request.form.get("friend_id")
+
+    user = User.objects(spotify_id=user_id).first() 
+    user.friends.append(
+        Friendship(
+                status='requested',
+                friend_id=friend_id
+        )
+    )
+    user.save()
+
+    requested = User.objects(spotify_id=friend_id).first()
+    requested.friends.append(
+        Friendship(
+                status='pending',
+                friend_id=user_id
+        )
+    )
+    requested.save()
+
+@app.route('/accept-friend',methods=['POST'])
+def accept_friend():
+    user_id = request.form.get("user_id")
+    friend_id = request.form.get("friend_id")
+
+    User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
+
+    User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
+   
+
+    
+
+
