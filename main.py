@@ -1,5 +1,6 @@
 from flask import Flask, request, make_response
 from dotenv import load_dotenv
+
 import json
 import requests
 import os
@@ -12,6 +13,8 @@ from playlist.helpers import refresh_token, get_listening_data
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
 load_dotenv()
+
+
 
 @app.route('/',methods=['GET'])
 def hello_flask():
@@ -54,6 +57,7 @@ def login_user():
             'name' : user.name,
             'spotify_id': user.spotify_id,
             'image_links':user.image_links,
+            'access_token': user.access_token;
     }
 
     return (json.dumps(result), 200)
@@ -61,11 +65,9 @@ def login_user():
 
 @app.route('/listening-history',methods=['GET'])
 def get_listening_history():    
-
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first() user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
 
-    user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
     user.song_data.top_artists= get_listening_data(user_id, 'top_artists')
     user.song_data.followed_artists = get_listening_data(user_id, 'followed_artists')
@@ -80,32 +82,41 @@ def request_friend():
     friend_id = request.form.get("friend_id")
 
     user = User.objects(spotify_id=user_id).first() 
-    user.friends.append(
-        Friendship(
-                status='requested',
-                friend_id=friend_id
-        )
-    )
-    user.save()
 
-    requested = User.objects(spotify_id=friend_id).first()
-    requested.friends.append(
-        Friendship(
-                status='pending',
-                friend_id=user_id
+    if user.access_token==request.headers.get("authorization"):
+        user.friends.append(
+            Friendship(
+                    status='requested',
+                    friend_id=friend_id
+            )
         )
-    )
-    requested.save()
+        user.save()
+
+        requested = User.objects(spotify_id=friend_id).first()
+        requested.friends.append(
+            Friendship(
+                    status='pending',
+                    friend_id=user_id
+            )
+        )
+        requested.save()
+        return (F"Successfully sent a friend request to user #{friend_id}.", 200)
+    else:
+        return ("You are not authorized to perform that action", 401)
 
 @app.route('/accept-friend',methods=['POST'])
 def accept_friend():
+    
     user_id = request.form.get("user_id")
     friend_id = request.form.get("friend_id")
 
-    User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
+    if (user.access_token==request.headers.get("authorization")):
+        User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
 
-    User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
-   
+        User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
+        return (F"Successfully added user #{friend_id} as a friend.", 200)
+    else: 
+        return ("You are not authorized to perform that action", 401)
 
     
 

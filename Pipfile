@@ -12,6 +12,7 @@ gunicorn = "*"
 pylint-venv = "*"
 flask = "*"
 requests = "*"
+apscheduler = "*"
 
 [requires]
 python_version = "3.7"
