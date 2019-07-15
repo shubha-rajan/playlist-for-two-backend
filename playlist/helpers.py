@@ -51,13 +51,9 @@ def get_listening_data(user_id, data_type):
 
     if data_type=='followed_artists' or data_type=='top_artists':
         returned_list = [clean_artist_data(artist) for artist in returned_list]
-    elif data_type=='saved_songs':
-        returned_list = [clean_saved_songs_data(track) for track in returned_list]
-    elif data_type=='top_songs':
-        returned_list = [clean_top_songs_data(track) for track in returned_list]
+    elif data_type=='saved_songs' or data_type=='top_songs':
+        returned_list = [clean_song_data(track) for track in returned_list]
 
-        
-    
     return(returned_list)
 
 
@@ -70,22 +66,15 @@ def clean_artist_data(artist):
     })
 
 
-def clean_saved_songs_data(track):
+def clean_song_data(track):
     if 'track' in track:
-        track = {
-            'name': track['track']['name'],
-            'id': track['track']['id'],
-            'artists': [artist['id'] for artist in track['track']['artists']],
-            'album':  track['track']['album']['id'],
-            'explicit': track['track']['explicit']
-        }
-    return(track)
-
-def clean_top_songs_data(track):
-    return({
+        track = track['track']
+    track = {
         'name': track['name'],
         'id': track['id'],
         'artists': [artist['id'] for artist in track['artists']],
         'album':  track['album']['id'],
         'explicit': track['explicit']
-    })
+        }
+    return(track)
+

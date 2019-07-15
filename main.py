@@ -65,10 +65,11 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    user.song_data.saved_songs = get_listening_data(user['spotify_id'], 'saved_songs')
-    user.song_data.top_songs= get_listening_data(user['spotify_id'], 'top_songs')
-    user.song_data.top_artists= get_listening_data(user['spotify_id'], 'top_artists')
-    user.song_data.followed_artists = get_listening_data(user['spotify_id'], 'followed_artists')
+    user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
+    user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
+    user.song_data.top_artists= get_listening_data(user_id, 'top_artists')
+    user.song_data.followed_artists = get_listening_data(user_id, 'followed_artists')
     user.save()
 
     return (user.song_data.to_json(), 200)
+
