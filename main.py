@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import json
 import requests
 import os
-import secrets
+import jwt
 
 import mongoengine
 
@@ -48,18 +48,20 @@ def login_user():
             name=json.loads(user_info.text)['display_name'], 
             spotify_id=json.loads(user_info.text)['id'],
             image_links=json.loads(user_info.text)['images'],
-            access_token= secrets.token_urlsafe(),
             sp_access_token =json.loads(result.text)['access_token'],
             friends=[],
             sp_refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
+
+        encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow(), 'aud': 'user'}, os.getenv['JWT_SECRET'], algorithm='HS256')
+
         
     result = {
             'name' : user.name,
             'spotify_id': user.spotify_id,
             'image_links':user.image_links,
-            'access_token': user.access_token
+            'jwt': encoded_jwt
     }
 
     return (json.dumps(result), 200)
@@ -70,7 +72,10 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    if (user.access_token==request.headers.get("authorization")):
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+
+    if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
@@ -90,7 +95,10 @@ def request_friend():
     user = User.objects(spotify_id=user_id).first() 
     requested = User.objects(spotify_id=friend_id).first()
 
-    if (user.access_token==request.headers.get("authorization")):
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+
+    if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
     
     user.friends.append(
@@ -103,17 +111,16 @@ def request_friend():
     user.save()
 
         
-        requested.friends.append(
-            Friendship(
-                    status='pending',
-                    friend_id=user_id,
-                    name=user.name
-            )
+    requested.friends.append(
+        Friendship(
+                status='pending',
+                friend_id=user_id,
+                name=user.name
         )
-        requested.save()
-        return (F"Successfully sent a friend request to user #{friend_id}.", 200)
-    else:
-        return ("You are not authorized to perform that action", 401)
+    )
+    requested.save()
+    return (F"Successfully sent a friend request to user #{friend_id}.", 200)
+
 
 @app.route('/accept-friend',methods=['POST'])
 def accept_friend():
@@ -121,7 +128,10 @@ def accept_friend():
     user_id = request.form.get("user_id")
     friend_id = request.form.get("friend_id")
 
-    if (user.access_token==request.headers.get("authorization")):
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+
+    if not(user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
     
     User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
@@ -137,7 +147,10 @@ def get_friends():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    if (user.access_token==request.headers.get("authorization")):
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+
+    if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
 
     incoming_requests= [friend for friend in user.friends if friend.status=='pending']
@@ -153,4 +166,6 @@ def get_friends():
         }
     }
     return(json.dumps(response), 200)
+
+
 
