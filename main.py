@@ -69,6 +69,9 @@ def login_user():
 def get_listening_history():    
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
+
+    if (user.access_token==request.headers.get("authorization")):
+        return ("You are not authorized to perform that action", 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
@@ -87,15 +90,17 @@ def request_friend():
     user = User.objects(spotify_id=user_id).first() 
     requested = User.objects(spotify_id=friend_id).first()
 
-    if user.access_token==request.headers.get("authorization"):
-        user.friends.append(
-            Friendship(
-                    status='requested',
-                    friend_id=friend_id,
-                    name=requested.name
-            )
+    if (user.access_token==request.headers.get("authorization")):
+        return ("You are not authorized to perform that action", 401)
+    
+    user.friends.append(
+        Friendship(
+                status='requested',
+                friend_id=friend_id,
+                name=requested.name
         )
-        user.save()
+    )
+    user.save()
 
         
         requested.friends.append(
@@ -117,29 +122,35 @@ def accept_friend():
     friend_id = request.form.get("friend_id")
 
     if (user.access_token==request.headers.get("authorization")):
-        User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
-
-        User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
-        return (F"Successfully added user #{friend_id} as a friend.", 200)
-    else: 
         return ("You are not authorized to perform that action", 401)
+    
+    User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
+
+    User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
+
+    return (F"Successfully added user #{friend_id} as a friend.", 200)
+
+    
 
 @app.route('/friends',methods=['GET'])
 def get_friends():
-        user_id = request.args.get("user_id")
-        user = User.objects(spotify_id=user_id).first() 
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
 
-        incoming_requests= [friend for friend in user.friends if friend.status=='pending']
-        sent_requests= [friend for friend in user.friends if friend.status=='requested']
-        accepted_requests= [friend for friend in user.friends if friend.status=='accepted']
+    if (user.access_token==request.headers.get("authorization")):
+        return ("You are not authorized to perform that action", 401)
 
-        response = {
-            "user":user_id, 
-            "friends": {
-                "incoming":incoming_requests,
-                "sent":sent_requests,
-                "accepted":accepted_requests,
-            }
+    incoming_requests= [friend for friend in user.friends if friend.status=='pending']
+    sent_requests= [friend for friend in user.friends if friend.status=='requested']
+    accepted_requests= [friend for friend in user.friends if friend.status=='accepted']
+
+    response = {
+        "user":user_id, 
+        "friends": {
+            "incoming":incoming_requests,
+            "sent":sent_requests,
+            "accepted":accepted_requests,
         }
-        return(json.dumps(response), 200)
+    }
+    return(json.dumps(response), 200)
 
