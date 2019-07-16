@@ -167,7 +167,7 @@ def get_friends():
     }
     return(json.dumps(response), 200)
 
-@app.route('/users',methods=['GET']):
+@app.route('/users',methods=['GET'])
 def all_users():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
