@@ -167,5 +167,16 @@ def get_friends():
     }
     return(json.dumps(response), 200)
 
+@app.route('/users',methods=['GET']):
+def all_users():
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+
+    if not (decoded.aud=='user'):
+        return ("You are not authorized to perform that action", 401)
+
+    response = User.objects().only('name', 'spotify_id')
+    return(response.to_json(), 200)
+    
 
 

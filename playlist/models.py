@@ -16,8 +16,8 @@ class Friendship(EmbeddedDocument):
 class User(Document):
     name= StringField(required=True)
     spotify_id= StringField(required=True)
-    access_token=StringField()
-    refresh_token=StringField()
+    sp_access_token=StringField()
+    sp_refresh_token=StringField()
     image_links=ListField(DictField())
     friends= ListField(EmbeddedDocumentField(Friendship))
     song_data= EmbeddedDocumentField(SongData, default=SongData)
