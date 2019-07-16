@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 import requests
 import os
+import secrets
 
 import mongoengine
 
@@ -47,9 +48,10 @@ def login_user():
             name=json.loads(user_info.text)['display_name'], 
             spotify_id=json.loads(user_info.text)['id'],
             image_links=json.loads(user_info.text)['images'],
-            access_token=json.loads(result.text)['access_token'],
+            access_token= secrets.token_urlsafe(),
+            sp_access_token =json.loads(result.text)['access_token'],
             friends=[],
-            refresh_token=json.loads(result.text)['refresh_token']
+            sp_refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
         
@@ -126,6 +128,7 @@ def accept_friend():
 def get_friends():
         user_id = request.args.get("user_id")
         user = User.objects(spotify_id=user_id).first() 
+
         incoming_requests= [friend for friend in user.friends if friend.status=='pending']
         sent_requests= [friend for friend in user.friends if friend.status=='requested']
         accepted_requests= [friend for friend in user.friends if friend.status=='accepted']

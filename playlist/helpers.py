@@ -11,12 +11,12 @@ def refresh_token(user_id):
         'client_id': os.getenv('SPOTIFY_CLIENT_ID'), 
         'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'), 
         "grant_type":'refresh_token',
-        'refresh_token': user.refresh_token
+        'refresh_token': user.sp_refresh_token
     }
 
     response = requests.post("https://accounts.spotify.com/api/token", data=params)
 
-    user.access_token=json.loads(response.text)['access_token']
+    user.sp_access_token=json.loads(response.text)['access_token']
     user.save()
     return(user.access_token)
 
@@ -36,7 +36,7 @@ def get_listening_data(user_id, data_type):
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': 'Bearer {}'.format(user.access_token) 
+            'Authorization': 'Bearer {}'.format(user.sp_access_token) 
             }
         ) 
         if response.status_code == 401:
