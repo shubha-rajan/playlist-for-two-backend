@@ -54,7 +54,7 @@ def login_user():
             )
         user.save()
 
-        encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow(), 'aud': 'user'}, os.getenv['JWT_SECRET'], algorithm='HS256')
+        encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow(), 'aud': 'user'}, os.getenv('JWT_SECRET'), algorithm='HS256')
 
         
     result = {
@@ -73,7 +73,7 @@ def get_listening_history():
     user = User.objects(spotify_id=user_id).first() 
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
@@ -96,7 +96,7 @@ def request_friend():
     requested = User.objects(spotify_id=friend_id).first()
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
@@ -129,7 +129,7 @@ def accept_friend():
     friend_id = request.form.get("friend_id")
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     if not(user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
@@ -148,7 +148,7 @@ def get_friends():
     user = User.objects(spotify_id=user_id).first() 
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv['JWT_SECRET'], algorithm='HS256')
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     if not (user.spotify_id==decoded.id):
         return ("You are not authorized to perform that action", 401)
