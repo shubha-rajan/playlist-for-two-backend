@@ -18,7 +18,7 @@ def refresh_token(user_id):
 
     user.sp_access_token=json.loads(response.text)['access_token']
     user.save()
-    return(user.access_token)
+    return(user.sp_access_token)
 
 
 def get_listening_data(user_id, data_type):
