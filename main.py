@@ -5,6 +5,7 @@ import json
 import requests
 import os
 import jwt
+from datetime import datetime
 
 import mongoengine
 
@@ -41,6 +42,7 @@ def login_user():
     )
     if user_info.status_code != 200 :
         return (user_info.text, user_info.status_code)
+        
     user = User.objects(spotify_id=json.loads(user_info.text)['id']).first()
 
     if not user:
@@ -54,18 +56,26 @@ def login_user():
             )
         user.save()
 
-        encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow(), 'aud': 'user'}, os.getenv('JWT_SECRET'), algorithm='HS256')
+    encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow(), 'aud': 'user'}, os.getenv('JWT_SECRET'), algorithm='HS256')
 
         
-    result = {
+    return (encoded_jwt, 200)
+
+
+@app.route('/me',methods=['GET'])
+def get_logged_in_user_info():
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+
+    user = User.objects(spotify_id=decoded.id).first() 
+
+    response = {
             'name' : user.name,
             'spotify_id': user.spotify_id,
             'image_links':user.image_links,
-            'jwt': encoded_jwt
     }
 
     return (json.dumps(result), 200)
-
 
 @app.route('/listening-history',methods=['GET'])
 def get_listening_history():    
