@@ -13,6 +13,7 @@ pylint-venv = "*"
 flask = "*"
 requests = "*"
 pyjwt = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.7"

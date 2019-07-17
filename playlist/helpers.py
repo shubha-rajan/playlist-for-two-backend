@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import json
 import requests
 import os
+import pandas as pd
 
 from .models import User, SongData, Friendship, Playlist
 
@@ -77,4 +78,39 @@ def clean_song_data(track):
         'explicit': track['explicit']
         }
     return(track)
+
+def find_common_songs(user1, user2):
+    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user2_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+
+    user1_songs = set([song['id'] for song in user1_songs])
+    user2_songs = set([song['id'] for song in user2_songs])
+
+    return(user1_songs & user2_songs)
+
+def find_common_albums(user1, user2):
+    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user2_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+
+    user1_albums = set([song['album'] for song in user1_songs])
+    user2_albums = set([song['album'] for song in user2_songs])
+
+    return(user1_albums & user2_albums)
+
+def find_common_artists(user1, user2):
+    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user1_artists_from_songs =  [artist for artist in song['artists'] for song in user1_songs]
+    user1_artists = user1.song_data['top_artists'] + user1.song_data['followed_artists'] 
+
+    user2_songs = user2.song_data['top_songs'] + user2.song_data['saved_songs']
+    user2_artists_from_songs =  [artist for artist in song['artists'] for song in user2_songs]
+    user2_artists = user2.song_data['top_artists'] + user2.song_data['followed_artists']
+
+    user1_artists = set([artist['id'] for artist in user1_artists] + user1_artists_from_songs)
+    user2_artists = set([artist['id'] for artist in user2_artists] + user2_artists_from_songs)
+
+    return (user1_artists & user2_artists)
+    
+    
+
 

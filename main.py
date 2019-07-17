@@ -61,7 +61,6 @@ def login_user():
         
     return (encoded_jwt, 200)
 
-
 @app.route('/me',methods=['GET'])
 def get_logged_in_user_info():
     encoded_jwt = request.headers.get("authorization")
@@ -95,7 +94,6 @@ def get_listening_history():
     user.save()
 
     return (user.song_data.to_json(), 200)
-
 
 @app.route('/request-friend',methods=['POST'])
 def request_friend():
@@ -131,7 +129,6 @@ def request_friend():
     requested.save()
     return (F"Successfully sent a friend request to user #{friend_id}.", 200)
 
-
 @app.route('/accept-friend',methods=['POST'])
 def accept_friend():
     
@@ -150,8 +147,6 @@ def accept_friend():
     User.objects.filter(spotify_id=friend_id, friends__friend_id=user_id).update(set__friends__S__status='accepted')
 
     return (F"Successfully added user #{friend_id} as a friend.", 200)
-
-    
 
 @app.route('/friends',methods=['GET'])
 def get_friends():
@@ -188,6 +183,3 @@ def all_users():
 
     response = User.objects().only('name', 'spotify_id')
     return(response.to_json(), 200)
-    
-
-
