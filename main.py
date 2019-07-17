@@ -163,9 +163,9 @@ def get_friends():
     if not (user.spotify_id==decoded['id']):
         return ("You are not authorized to perform that action", 401)
 
-    incoming_requests= [friend for friend in user.friends if friend.status=='pending']
-    sent_requests= [friend for friend in user.friends if friend.status=='requested']
-    accepted_requests= [friend for friend in user.friends if friend.status=='accepted']
+    incoming_requests= [friend.to_json() for friend in user.friends if friend.status=='pending']
+    sent_requests= [friend.to_json() for friend in user.friends if friend.status=='requested']
+    accepted_requests= [friend.to_json() for friend in user.friends if friend.status=='accepted']
 
     response = {
         "user":user_id, 
