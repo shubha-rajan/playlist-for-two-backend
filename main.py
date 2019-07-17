@@ -141,12 +141,13 @@ def accept_friend():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
+    user = User.objects(spotify_id=user_id).first() 
     if not(user.spotify_id==decoded['id']):
         return ("You are not authorized to perform that action", 401)
     
-    User.objects.filter(spotify_id=user_id, friends__user_id=friend_id).update(set__friends__S__status='accepted')
+    User.objects.filter(spotify_id=user_id, friends__friend_id=friend_id).update(set__friends__S__status='accepted')
 
-    User.objects.filter(spotify_id=friend_id, friends__user_id=user_id).update(set__friends__S__status='accepted')
+    User.objects.filter(spotify_id=friend_id, friends__friend_id=user_id).update(set__friends__S__status='accepted')
 
     return (F"Successfully added user #{friend_id} as a friend.", 200)
 
