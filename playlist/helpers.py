@@ -3,6 +3,7 @@ import json
 import requests
 import os
 import pandas as pd
+from collections import Counter
 
 from .models import User, SongData, Friendship, Playlist
 
@@ -80,8 +81,8 @@ def clean_song_data(track):
     return(track)
 
 def find_common_songs(user1, user2):
-    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
-    user2_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user1_songs = user1.song_data.top_songs + user1.song_data.saved_songs
+    user2_songs = user1.song_data.top_songs+ user1.song_data.saved_songs
 
     user1_songs = set([song['id'] for song in user1_songs])
     user2_songs = set([song['id'] for song in user2_songs])
@@ -89,8 +90,8 @@ def find_common_songs(user1, user2):
     return(user1_songs & user2_songs)
 
 def find_common_albums(user1, user2):
-    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
-    user2_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user1_songs = user1.song_data.top_songs + user1.song_data.saved_songs
+    user2_songs = user1.song_data.top_songs+ user1.song_data.saved_songs
 
     user1_albums = set([song['album'] for song in user1_songs])
     user2_albums = set([song['album'] for song in user2_songs])
@@ -109,8 +110,38 @@ def find_common_artists(user1, user2):
     user1_artists = set([artist['id'] for artist in user1_artists] + user1_artists_from_songs)
     user2_artists = set([artist['id'] for artist in user2_artists] + user2_artists_from_songs)
 
-    return (user1_artists & user2_artists)
+    return(user1_artists & user2_artists)
+
+def get_user_genres(user):
+    user_artists = user.song_data['top_artists'] + user.song_data['followed_artists']
+    user_genres = [genre for genre in artist['genres'] for artist in user_artists]
+    return (Counter(user_genres))
+
     
-    
+def get_song_analysis_matrix(user):
+    song_ids = ','.join([song['id'] for song in user.song_data.top_songs])
+
+    response = requests.get(F'https://api.spotify.com/v1/audio-features/?ids={song_ids}',{
+            'Authorization': 'Bearer {}'.format(user.sp_access_token) 
+            })
+
+    song_analysis_matrix = [features(track) for track in response.body['audio_features']]
+    return(song_analysis_matrix)
+
+
+def get_features(track):
+    features = {
+        { "danceability": track['danceability'],
+       "energy": track['energy'],
+       "loudness": track['loudness'],
+       "speechiness": track['speechiness']
+       "acousticness": track['acousticness']
+       "instrumentalness": track['instrumentalness']
+       "liveness": track['liveness']
+       "valence": track['valence']
+       "tempo": track['tempo']
+       "id": track['id']
+    }
+    return(features)
 
 
