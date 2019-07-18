@@ -10,7 +10,7 @@ from datetime import datetime
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, get_listening_data
+from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -81,11 +81,15 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    # encoded_jwt = request.headers.get("authorization")
 
-    if not (user.spotify_id==decoded['id']):
-        return ("You are not authorized to perform that action", 401)
+    # try:
+    #     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    # except:
+    #     return ("You are not authorized to perform that action", 401)
+    # else:
+    #     if not (user.spotify_id==decoded['id']):
+    #         return ("You are not authorized to perform that action", 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
@@ -183,3 +187,19 @@ def all_users():
 
     response = User.objects().only('name', 'spotify_id')
     return(response.to_json(), 200)
+
+@app.route('/genres',methods=['GET'])
+def user_genres():
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
+    return(json.dumps(get_user_genres(user)))
+
+@app.route('/intersection', methods=['GET'])
+def find_intersection():
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
+    friend_id = request.args.get("friend_id")
+    friend = User.objects(spotify_id=friend_id).first() 
+    
+    intersection = get_user_intersection(user, friend)
+    return(json.dumps(intersection))

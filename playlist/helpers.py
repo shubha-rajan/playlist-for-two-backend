@@ -82,41 +82,57 @@ def clean_song_data(track):
 
 def find_common_songs(user1, user2):
     user1_songs = user1.song_data.top_songs + user1.song_data.saved_songs
-    user2_songs = user1.song_data.top_songs+ user1.song_data.saved_songs
+    user2_songs = user2.song_data.top_songs+ user2.song_data.saved_songs
 
     user1_songs = set([song['id'] for song in user1_songs])
     user2_songs = set([song['id'] for song in user2_songs])
 
-    return(user1_songs & user2_songs)
+    return(list(user1_songs.intersection(user2_songs)))
 
 def find_common_albums(user1, user2):
     user1_songs = user1.song_data.top_songs + user1.song_data.saved_songs
-    user2_songs = user1.song_data.top_songs+ user1.song_data.saved_songs
+    user2_songs = user2.song_data.top_songs+ user2.song_data.saved_songs
 
     user1_albums = set([song['album'] for song in user1_songs])
     user2_albums = set([song['album'] for song in user2_songs])
 
-    return(user1_albums & user2_albums)
+    return(list(user1_albums & user2_albums))
 
 def find_common_artists(user1, user2):
     user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
-    user1_artists_from_songs =  [artist for artist in song['artists'] for song in user1_songs]
+    user1_artists_from_songs =  [artist for song in user1_songs for artist in song['artists'] ]
     user1_artists = user1.song_data['top_artists'] + user1.song_data['followed_artists'] 
 
     user2_songs = user2.song_data['top_songs'] + user2.song_data['saved_songs']
-    user2_artists_from_songs =  [artist for artist in song['artists'] for song in user2_songs]
+    user2_artists_from_songs =  [artist for song in user2_songs for artist in song['artists'] ]
     user2_artists = user2.song_data['top_artists'] + user2.song_data['followed_artists']
 
     user1_artists = set([artist['id'] for artist in user1_artists] + user1_artists_from_songs)
     user2_artists = set([artist['id'] for artist in user2_artists] + user2_artists_from_songs)
 
-    return(user1_artists & user2_artists)
+    return(list(user1_artists & user2_artists))
 
 def get_user_genres(user):
     user_artists = user.song_data['top_artists'] + user.song_data['followed_artists']
-    user_genres = [genre for genre in artist['genres'] for artist in user_artists]
+    user_genres = [genre for artist in user_artists for genre in artist['genres'] ]
     return (Counter(user_genres))
 
+def find_common_genres(user1, user2, n):
+    user1_top_genres = set(dict(get_user_genres(user1).most_common(n)).keys())
+    user2_top_genres = set(dict(get_user_genres(user2).most_common(n)).keys())
+
+
+    return(list(user1_top_genres & user2_top_genres))
+
+def get_user_intersection(user1, user2):
+    intersection = {
+        'common_songs': find_common_songs(user1, user2),
+        'common_albums':find_common_albums(user1, user2),
+        'common_artists':find_common_artists(user1, user2),
+        'common_genres': find_common_genres(user1, user2, 15)
+    }
+    return(intersection)
+    
     
 def get_song_analysis_matrix(user):
     song_ids = ','.join([song['id'] for song in user.song_data.top_songs])
@@ -131,17 +147,16 @@ def get_song_analysis_matrix(user):
 
 def get_features(track):
     features = {
-        { "danceability": track['danceability'],
-       "energy": track['energy'],
-       "loudness": track['loudness'],
-       "speechiness": track['speechiness']
-       "acousticness": track['acousticness']
-       "instrumentalness": track['instrumentalness']
-       "liveness": track['liveness']
-       "valence": track['valence']
-       "tempo": track['tempo']
-       "id": track['id']
+        "danceability": track['danceability'],
+        "energy": track['energy'],
+        "loudness": track['loudness'],
+        "speechiness": track['speechiness'],
+        "acousticness": track['acousticness'],
+        "instrumentalness": track['instrumentalness'],
+        "liveness": track['liveness'],
+        "valence": track['valence'],
+        "tempo": track['tempo'],
+        "id": track['id']
     }
     return(features)
-
 
