@@ -165,7 +165,7 @@ def get_seed_names(seeds, token):
     return seed_names  
 
 def name_from_id(object_id, object_type, token):
-        response = requests.get(F'https://api.spotify.com/v1/{object_type}s/{object_id}', headers={'Authorization': F'Bearer {token}' })
+    response = requests.get(F'https://api.spotify.com/v1/{object_type}s/{object_id}', headers={'Authorization': F'Bearer {token}' })
     return json.loads(response.text)['name']
 
 def generate_playlist(user1, user2):
@@ -191,9 +191,11 @@ def generate_playlist(user1, user2):
 
     tracks = ','.join(['spotify:track:{}'.format(track['id']) for track in recommendations])
 
-    add_tracks = requests.post(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks?uris={tracks}', headers= {'Authorization': 'Bearer {token}' })
+    add_tracks = requests.post(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks?uris={tracks}', headers= {'Authorization': F'Bearer {token}'})
+
+    print(add_tracks.text)
   
-    return {'seeds': seeds, 'uri':F'spotify:playlist:{playlist_id}'}
+    return {'seeds': seeds, 'uri':F'spotify:playlist:{playlist_id}' , 'description': playlist_info}
 
 def get_features(track):
     features = {

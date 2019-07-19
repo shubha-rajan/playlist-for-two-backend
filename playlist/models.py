@@ -13,6 +13,12 @@ class Friendship(EmbeddedDocument):
     friend_id = StringField(required=True)
     name = StringField()
 
+class Playlist(EmbeddedDocument):
+    uri= StringField(required=True)
+    owners= ListField(StringField())
+    description= DictField()
+    seeds=ListField(StringField())
+
 class User(Document):
     name= StringField(required=True)
     spotify_id= StringField(required=True)
@@ -21,11 +27,6 @@ class User(Document):
     image_links=ListField(DictField())
     friends= ListField(EmbeddedDocumentField(Friendship))
     song_data= EmbeddedDocumentField(SongData, default=SongData)
+    playlists= ListField(EmbeddedDocumentField(Playlist))
 
 
-
-
-
-class Playlist(Document):
-    uri= StringField(required=True)
-    owners= ListField(ReferenceField(User))

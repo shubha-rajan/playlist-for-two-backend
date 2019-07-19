@@ -52,6 +52,7 @@ def login_user():
             image_links=json.loads(user_info.text)['images'],
             sp_access_token =json.loads(result.text)['access_token'],
             friends=[],
+            playlists=[],
             sp_refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
@@ -216,7 +217,7 @@ def find_reccomendations():
 
     return(result)
 
-@app.route('/new-playlist', methods=['GET'])
+@app.route('/new-playlist', methods=['POST'])
 def create_new_playlist():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
@@ -225,5 +226,28 @@ def create_new_playlist():
 
     playlist = generate_playlist(user, friend)
 
+    new_playlist = Playlist(
+        uri= playlist['uri'],
+        description=playlist['description'],
+        seeds=playlist['seeds'],
+        owners=[user_id, friend_id]
+    )
+
+    user.playlists.append(new_playlist)
+    user.save()
+    friend.playlists.append(new_playlist)
+    friend.save()
+
+
     return (json.dumps(playlist))
+
+@app.route('/playlists', methods=['GET'])
+def get_playlists():
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
+    friend_id = request.args.get("friend_id")
+
+    shared_playlists = [playlist.to_json() for playlist in user.playlists if friend_id in playlist.owners]
+
+    return (json.dumps(shared_playlists))
 
