@@ -82,15 +82,15 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    # encoded_jwt = request.headers.get("authorization")
+    encoded_jwt = request.headers.get("authorization")
 
-    # try:
-    #     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-    # except:
-    #     return ("You are not authorized to perform that action", 401)
-    # else:
-    #     if not (user.spotify_id==decoded['id']):
-    #         return ("You are not authorized to perform that action", 401)
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ("You are not authorized to perform that action", 401)
+    else:
+        if not (user.spotify_id==decoded['id']):
+            return ("You are not authorized to perform that action", 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
