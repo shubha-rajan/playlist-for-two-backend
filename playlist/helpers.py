@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import json
 import requests
 import os
+import random
 import pandas as pd
 from collections import Counter
 
@@ -137,12 +138,40 @@ def get_user_intersection(user1, user2):
 def get_song_analysis_matrix(user):
     song_ids = ','.join([song['id'] for song in user.song_data.top_songs])
 
-    response = requests.get(F'https://api.spotify.com/v1/audio-features/?ids={song_ids}',{
+    response = requests.get(F'https://api.spotify.com/v1/audio-features/?ids={song_ids}',headers={
             'Authorization': 'Bearer {}'.format(user.sp_access_token) 
             })
 
     song_analysis_matrix = [features(track) for track in response.body['audio_features']]
     return(song_analysis_matrix)
+
+
+def get_recommendations(intersection, user):
+    songs = [{song_id : 'song'} for song_id in intersection['common_songs']]
+    artists = [{artist_id : 'artist'} for artist_id in intersection['common_artists']]
+    genres = [{genre : 'genre'} for genre in intersection['common_genres']]
+
+    seeds = random.sample((songs + artists + genres), 5)
+
+    print(seeds)
+
+    seed_songs = ','.join([list(item.keys())[0] for item in seeds if 'song' in item.values()])
+    seed_artists = ','.join([list(item.keys())[0] for item in seeds if 'artist' in item.values()])
+    seed_genres = ','.join([list(item.keys())[0] for item in seeds if 'genre' in item.values()])
+
+    request_url = F'https://api.spotify.com/v1/recommendations?seed_tracks={seed_songs}&seed_artists={seed_artists}&seed_genres={seed_genres}'
+
+    refresh_token(user.spotify_id)
+    response = requests.get(request_url, 
+            headers= {'Authorization': 'Bearer {}'.format(user.sp_access_token) 
+            })
+
+    recommendations = [clean_song_data(track) for track in json.loads(response.text)['tracks']]
+
+    return(json.dumps(recommendations))
+    
+
+
 
 
 def get_features(track):

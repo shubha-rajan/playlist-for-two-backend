@@ -10,7 +10,7 @@ from datetime import datetime
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres
+from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres, get_recommendations
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -203,3 +203,15 @@ def find_intersection():
     
     intersection = get_user_intersection(user, friend)
     return(json.dumps(intersection))
+
+@app.route('/recommendations', methods=['GET'])
+def find_reccomendations():
+    user_id = request.args.get("user_id")
+    user = User.objects(spotify_id=user_id).first() 
+    friend_id = request.args.get("friend_id")
+    friend = User.objects(spotify_id=friend_id).first() 
+    
+    intersection = get_user_intersection(user, friend)
+    result = get_recommendations(intersection, user)
+
+    return(result)
