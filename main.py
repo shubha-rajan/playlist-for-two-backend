@@ -225,5 +225,5 @@ def create_new_playlist():
 
     playlist = generate_playlist(user, friend)
 
-    return (json.dumps({'playlist_uri': uri }))
+    return (json.dumps(playlist))
 
