@@ -247,7 +247,7 @@ def get_playlists():
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")
 
-    shared_playlists = [playlist.to_json() for playlist in user.playlists if friend_id in playlist.owners]
+    shared_playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
 
     return (json.dumps(shared_playlists))
 
