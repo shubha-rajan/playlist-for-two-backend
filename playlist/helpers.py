@@ -19,6 +19,8 @@ def refresh_token(user_id):
     }
 
     response = requests.post("https://accounts.spotify.com/api/token", data=params)
+    if response.status_code !=200:
+        response.raise_for_status()
 
     user.sp_access_token=json.loads(response.text)['access_token']
     user.save()
@@ -141,6 +143,8 @@ def get_recommendations(intersection):
     
     response = requests.get(request_url, 
             headers= {'Authorization': F'Bearer {token}'})
+    if response.status_code != 200:
+        response.raise_for_status
 
     recommendations = {'seeds': seed_names,
         'recommendations': [clean_song_data(track) for track in json.loads(response.text)['tracks']]
@@ -167,7 +171,10 @@ def get_seed_names(seeds, token):
 
 def name_from_id(object_id, object_type, token):
     response = requests.get(F'https://api.spotify.com/v1/{object_type}s/{object_id}', headers={'Authorization': F'Bearer {token}' })
-    return json.loads(response.text)['name']
+    if response.status_code != 200:
+        response.raise_for_status()
+    else:
+        return json.loads(response.text)['name']
 
 def generate_playlist(user1, user2):
     uid = os.getenv('SPOTIFY_USER_ID')
@@ -190,16 +197,40 @@ def generate_playlist(user1, user2):
 
     create_playlist = requests.post(F'https://api.spotify.com/v1/users/{uid}/playlists', headers= {'Authorization': F'Bearer {token}' }, data = json.dumps(playlist_info))
 
+    if create_playlist.status_code != 200:
+        create_playlist.raise_for_status
+
     playlist_id = json.loads(create_playlist.text)['id']
 
     tracks = ','.join(['spotify:track:{}'.format(track['id']) for track in recommendations])
 
     add_tracks = requests.post(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks?uris={tracks}', headers= {'Authorization': F'Bearer {token}'})
 
-    print(add_tracks.text)
-  
-    return {'seeds': seeds, 'uri':F'spotify:playlist:{playlist_id}' , 'description': playlist_info}
+    if add_tracks.status_code == 200:
+        return {'seeds': seeds, 'uri':F'spotify:playlist:{playlist_id}' , 'description': playlist_info}
+    else:
+        add_tracks.raise_for_status()
 
+def get_tracks_from_id(playlist_id):
+    token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
+    response = requests(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers= {'Authorization': F'Bearer {token}'})
+
+    if (response.status_code == 200):
+        tracks = json.loads(response.text)['items']
+        tracks = [clean_playlist_track_data(track) for track in tracks]
+        return tracks
+    else:
+        response.raise_for_status()
+
+def clean_playlist_track_data(track):
+    return (
+        {
+            'name' = track['name'],
+            'id' = track['id']
+            'artists' = [artist['name'] for artist in track['artists']]
+        }
+    )
+    
 def get_features(track):
     features = {
         "danceability": track['danceability'],
@@ -221,6 +252,9 @@ def get_song_analysis_matrix(user):
 
     response = requests.get(F'https://api.spotify.com/v1/audio-features/?ids={song_ids}',headers={
             'Authorization': F'Bearer {token}'})
-
-    song_analysis_matrix = [features(track) for track in response.body['audio_features']]
-    return(song_analysis_matrix)
+    
+    if response.status_code == 200:
+        song_analysis_matrix = [features(track) for track in response.body['audio_features']]
+        return(song_analysis_matrix)
+    else:
+        response.raise_for_status()
