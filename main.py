@@ -86,15 +86,15 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    # encoded_jwt = request.headers.get("authorization")
+    encoded_jwt = request.headers.get("authorization")
 
-    # try:
-    #     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-    # except:
-    #     return ("You are not authorized to perform that action", 401)
-    # else:
-    #     if not (user.spotify_id==decoded['id']):
-    #         return ("You are not authorized to perform that action", 401)
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        if not (user.spotify_id==decoded['id']):
+            return ({"error": "You are not authorized to perform that action."}, 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
@@ -113,11 +113,13 @@ def request_friend():
     requested = User.objects(spotify_id=friend_id).first()
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-
-    if not (user.spotify_id==decoded['id']):
-        return ("You are not authorized to perform that action", 401)
-    
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        if not (user.spotify_id==decoded['id']):
+            return ({"error": "You are not authorized to perform that action."}, 401)
     user.friends.append(
         Friendship(
                 status='requested',
@@ -145,12 +147,13 @@ def accept_friend():
     friend_id = request.form.get("friend_id")
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-
-    user = User.objects(spotify_id=user_id).first() 
-    if not(user.spotify_id==decoded['id']):
-        return ("You are not authorized to perform that action", 401)
-    
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        if not (user.spotify_id==decoded['id']):
+            return ({"error": "You are not authorized to perform that action."}, 401)
     User.objects.filter(spotify_id=user_id, friends__friend_id=friend_id).update(set__friends__S__status='accepted')
 
     User.objects.filter(spotify_id=friend_id, friends__friend_id=user_id).update(set__friends__S__status='accepted')
@@ -163,10 +166,13 @@ def get_friends():
     user = User.objects(spotify_id=user_id).first() 
 
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-
-    if not (user.spotify_id==decoded['id']):
-        return ("You are not authorized to perform that action", 401)
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        if not (user.spotify_id==decoded['id']):
+            return ({"error": "You are not authorized to perform that action."}, 401)
 
     incoming_requests= [friend.to_json() for friend in user.friends if friend.status=='pending']
     sent_requests= [friend.to_json() for friend in user.friends if friend.status=='requested']
@@ -185,93 +191,125 @@ def get_friends():
 @app.route('/users',methods=['GET'])
 def all_users():
     encoded_jwt = request.headers.get("authorization")
-    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-
-    if not (decoded):
-        return ("You are not authorized to perform that action", 401)
-
-    response = User.objects().only('name', 'spotify_id')
-    return(response.to_json(), 200)
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        response = User.objects().only('name', 'spotify_id')
+        return(response.to_json(), 200)
 
 @app.route('/genres',methods=['GET'])
 def user_genres():
-    user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
-    return(json.dumps(get_user_genres(user)))
+    encoded_jwt = request.headers.get("authorization")
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        user_id = request.args.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        return(json.dumps(get_user_genres(user)))
 
 @app.route('/intersection', methods=['GET'])
 def find_intersection():
-    user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
-    friend_id = request.args.get("friend_id")
-    friend = User.objects(spotify_id=friend_id).first() 
-    
-    intersection = get_user_intersection(user, friend)
-    return(json.dumps(intersection))
+    encoded_jwt = request.headers.get("authorization")
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        user_id = request.args.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        friend_id = request.args.get("friend_id")
+        friend = User.objects(spotify_id=friend_id).first() 
+        
+        intersection = get_user_intersection(user, friend)
+        return(json.dumps(intersection))
 
 @app.route('/recommendations', methods=['GET'])
 def find_reccomendations():
-    user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
-    friend_id = request.args.get("friend_id")
-    friend = User.objects(spotify_id=friend_id).first() 
-    
-    intersection = get_user_intersection(user, friend)
-    result = get_recommendations(intersection)
-
-    return(result)
+    encoded_jwt = request.headers.get("authorization")
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        user_id = request.args.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        friend_id = request.args.get("friend_id")
+        friend = User.objects(spotify_id=friend_id).first() 
+        
+        intersection = get_user_intersection(user, friend)
+        result = get_recommendations(intersection)
+        return(result)
 
 @app.route('/new-playlist', methods=['POST'])
 def create_new_playlist():
-    user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
-    friend_id = request.args.get("friend_id")
-    friend = User.objects(spotify_id=friend_id).first()
+    encoded_jwt = request.headers.get("authorization")
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        user_id = request.args.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        friend_id = request.args.get("friend_id")
+        friend = User.objects(spotify_id=friend_id).first()
 
-    playlist = generate_playlist(user, friend)
+        playlist = generate_playlist(user, friend)
 
-    print(playlist)
+        new_playlist = Playlist(
+            uri= playlist['uri'],
+            description=playlist['description'],
+            seeds=playlist['seeds'],
+            owners=[user_id, friend_id]
+        )
 
-    new_playlist = Playlist(
-        uri= playlist['uri'],
-        description=playlist['description'],
-        seeds=playlist['seeds'],
-        owners=[user_id, friend_id]
-    )
-
-    user.playlists.append(new_playlist)
-    user.save()
-    friend.playlists.append(new_playlist)
-    friend.save()
+        user.playlists.append(new_playlist)
+        user.save()
+        friend.playlists.append(new_playlist)
+        friend.save()
 
 
-    return (json.dumps(playlist))
+        return (json.dumps(playlist))
 
 @app.route('/playlists', methods=['GET'])
 def get_playlists():
-    user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
-    friend_id = request.args.get("friend_id")
+    encoded_jwt = request.headers.get("authorization")
+    try:
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
+    else:
+        user_id = request.args.get("user_id")
+        user = User.objects(spotify_id=user_id).first() 
+        friend_id = request.args.get("friend_id")
 
-    shared_playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
+        shared_playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
 
-    return (json.dumps(shared_playlists))
+        return (json.dumps(shared_playlists))
 
 @app.route('/playlist', methods=['GET'])  
 def get_playlist_tracks():
-    playlist_uri= request.args.get("playlist_uri")
-    playlist_id = playlist_uri[17:]
-
+    encoded_jwt = request.headers.get("authorization")
     try:
-        track_list = get_tracks_from_id(playlist_id)
-    
-    except requests.exceptions.HTTPError as http_err:
-        print(http_err)
-    except requests.exceptions.ConnectionError as conn_err:
-        print(conn_err)
-    except requests.exceptions.Timeout as timeout_err:
-        print(timeout_err)
-    except requests.exceptions.RequestException as err:
-        print(err)
+        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    except:
+        return ({"error": "You are not authorized to perform that action."}, 401)
     else:
-        return (json.dumps(track_list))
+        playlist_uri= request.args.get("playlist_uri")
+        playlist_id = playlist_uri[17:]
+
+        try:
+            track_list = get_tracks_from_id(playlist_id)
+        except requests.exceptions.HTTPError as http_err:
+            print(http_err)
+        except requests.exceptions.ConnectionError as conn_err:
+            print(conn_err)
+        except requests.exceptions.Timeout as timeout_err:
+            print(timeout_err)
+        except requests.exceptions.RequestException as err:
+            print(err)
+        else:
+            return (json.dumps(track_list))
