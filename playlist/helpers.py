@@ -225,9 +225,9 @@ def get_tracks_from_id(playlist_id):
 def clean_playlist_track_data(track):
     return (
         {
-            'name' = track['name'],
-            'id' = track['id']
-            'artists' = [artist['name'] for artist in track['artists']]
+            'name': track['name'],
+            'id': track['id'],
+            'artists': [artist['name'] for artist in track['artists']]
         }
     )
     
