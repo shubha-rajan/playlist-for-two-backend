@@ -213,7 +213,7 @@ def generate_playlist(user1, user2):
 
 def get_tracks_from_id(playlist_id):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
-    response = requests(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers= {'Authorization': F'Bearer {token}'})
+    response = requests.get(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers= {'Authorization': F'Bearer {token}'})
 
     if (response.status_code == 200):
         tracks = json.loads(response.text)['items']
@@ -223,6 +223,8 @@ def get_tracks_from_id(playlist_id):
         response.raise_for_status()
 
 def clean_playlist_track_data(track):
+    if 'track' in track:
+        track = track['track']
     return (
         {
             'name': track['name'],

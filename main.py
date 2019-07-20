@@ -10,7 +10,7 @@ from datetime import datetime
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres, get_recommendations, generate_playlist
+from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres, get_recommendations, generate_playlist, get_tracks_from_id
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -251,3 +251,21 @@ def get_playlists():
 
     return (json.dumps(shared_playlists))
 
+@app.route('/playlist', methods=['GET'])  
+def get_playlist_tracks():
+    playlist_uri= request.args.get("playlist_uri")
+    playlist_id = playlist_uri[17:]
+
+    try:
+        track_list = get_tracks_from_id(playlist_id)
+    
+    except requests.exceptions.HTTPError as http_err:
+        print(http_err)
+    except requests.exceptions.ConnectionError as conn_err:
+        print(conn_err)
+    except requests.exceptions.Timeout as timeout_err:
+        print(timeout_err)
+    except requests.exceptions.RequestException as err:
+        print(err)
+    else:
+        return (json.dumps(track_list))
