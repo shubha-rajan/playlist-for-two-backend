@@ -206,7 +206,7 @@ def generate_playlist(user1, user2):
 
     add_tracks = requests.post(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks?uris={tracks}', headers= {'Authorization': F'Bearer {token}'})
 
-    if add_tracks.status_code == 200:
+    if add_tracks.status_code == 200 or add_tracks.status_code == 201:
         return {'seeds': seeds, 'uri':F'spotify:playlist:{playlist_id}' , 'description': playlist_info}
     else:
         add_tracks.raise_for_status()

@@ -56,6 +56,10 @@ def login_user():
             sp_refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
+    else:
+        user.sp_access_token =json.loads(result.text)['access_token']
+        user.sp_refresh_token=json.loads(result.text)['refresh_token']
+        user.save()
 
     encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow()}, os.getenv('JWT_SECRET'), algorithm='HS256')
 
@@ -82,15 +86,15 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    encoded_jwt = request.headers.get("authorization")
+    # encoded_jwt = request.headers.get("authorization")
 
-    try:
-        decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
-    except:
-        return ("You are not authorized to perform that action", 401)
-    else:
-        if not (user.spotify_id==decoded['id']):
-            return ("You are not authorized to perform that action", 401)
+    # try:
+    #     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+    # except:
+    #     return ("You are not authorized to perform that action", 401)
+    # else:
+    #     if not (user.spotify_id==decoded['id']):
+    #         return ("You are not authorized to perform that action", 401)
     
     user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
     user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
@@ -225,6 +229,8 @@ def create_new_playlist():
     friend = User.objects(spotify_id=friend_id).first()
 
     playlist = generate_playlist(user, friend)
+
+    print(playlist)
 
     new_playlist = Playlist(
         uri= playlist['uri'],
