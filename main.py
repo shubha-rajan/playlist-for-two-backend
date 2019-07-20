@@ -33,6 +33,8 @@ def confirm_user_identity(func):
     @wraps(func)
     def function_with_identification(*args, **kws):
         user_id = request.args.get("user_id")
+        if not user_id:
+            user_id = request.form.get("user_id")
         user = User.objects(spotify_id=user_id).first() 
 
         encoded_jwt = request.headers.get("authorization")
