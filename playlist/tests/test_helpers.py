@@ -70,18 +70,21 @@ class TestFindIntersection(TestCase):
         common_artists = helpers.find_common_artists(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_artists)
+        self.assertCountEqual(result, common_artists)
 
     def test_find_common_songs(self):
         result = ["15iosIuxC3C53BgsM5Uggs"]
         common_songs = helpers.find_common_songs(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_songs)
+        self.assertCountEqual(result, common_songs)
 
     def test_find_common_genres(self):
-        result = ["15iosIuxC3C53BgsM5Uggs"]
+        result = ["swedish hip hop", "art rock", "glam rock", "permanent wave"]
         common_genres = helpers.find_common_genres(self.user1, self.user2)
         for genre in result:
-            self.assertIn(genres, common_genres)
+            self.assertIn(genre, common_genres)
+        self.assertCountEqual(result, common_genres)
 
 
 class TestGetListeningDataHelpers(TestCase):
@@ -89,10 +92,6 @@ class TestGetListeningDataHelpers(TestCase):
     def setup_class(cls):
         cls.mock_get_patcher = patch('playlist.helpers.requests.get')
         cls.mock_get = cls.mock_get_patcher.start()
-
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_get_patcher.stop()
         cls.user = {
             "name":"Verlie Breitenberg",
             "spotify_id":"bdb1ffa9-6c46-4a8a-9d6f-3227b1ab399c",
@@ -101,6 +100,11 @@ class TestGetListeningDataHelpers(TestCase):
             "sp_access_token":"98765",
             "sp_refresh_token":"12345"
         }
+
+    @classmethod
+    def teardown_class(cls):
+        cls.mock_get_patcher.stop()
+        
 
     def test_get_top_artists_response_ok(self):
         self.mock_get.return_value.ok = True
