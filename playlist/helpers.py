@@ -60,6 +60,12 @@ def get_listening_data(user_id, data_type):
 
     return(returned_list)
 
+def load_user_data(user):
+    user.song_data.saved_songs = get_listening_data(user.spotify_id, 'saved_songs')
+    user.song_data.top_songs= get_listening_data(user.spotify_id, 'top_songs')
+    user.song_data.top_artists= get_listening_data(user.spotify_id, 'top_artists')
+    user.song_data.followed_artists = get_listening_data(user.spotify_id, 'followed_artists')
+    user.save()
 
 def clean_artist_data(artist):
     return({
@@ -110,9 +116,9 @@ def get_user_genres(user):
     user_genres = [genre for artist in user_artists for genre in artist['genres'] ]
     return (Counter(user_genres))
 
-def find_common_genres(user1, user2, n):
-    user1_top_genres = set(dict(get_user_genres(user1).most_common(n)).keys())
-    user2_top_genres = set(dict(get_user_genres(user2).most_common(n)).keys())
+def find_common_genres(user1, user2):
+    user1_top_genres = set(dict(get_user_genres(user1).most_common()).keys())
+    user2_top_genres = set(dict(get_user_genres(user2).most_common()).keys())
 
     return(list(user1_top_genres & user2_top_genres))
 
@@ -120,7 +126,7 @@ def get_user_intersection(user1, user2):
     intersection = {
         'common_songs': find_common_songs(user1, user2),
         'common_artists':find_common_artists(user1, user2),
-        'common_genres': find_common_genres(user1, user2, 15)
+        'common_genres': find_common_genres(user1, user2)
     }
     return(intersection)    
     
@@ -131,7 +137,10 @@ def get_recommendations(intersection):
     artists = [{artist_id : 'artist'} for artist_id in intersection['common_artists']]
     genres = [{genre : 'genre'} for genre in intersection['common_genres']]
 
-    seeds = random.sample((songs + artists + genres), 5)
+    if len(songs + artists + genres) > 5:
+        seeds = random.sample((songs + artists + genres), 5)
+    else:
+        seeds = songs + artists + genres
     seed_names = get_seed_names(seeds, token)
 
     seed_songs = ','.join([list(item.keys())[0] for item in seeds if 'song' in item.values()])
@@ -140,12 +149,12 @@ def get_recommendations(intersection):
 
     request_url = F'https://api.spotify.com/v1/recommendations?seed_tracks={seed_songs}&seed_artists={seed_artists}&seed_genres={seed_genres}'
 
-    
+
     response = requests.get(request_url, 
             headers= {'Authorization': F'Bearer {token}'})
     if response.status_code != 200:
         response.raise_for_status
-
+    
     recommendations = {'seeds': seed_names,
         'recommendations': [clean_song_data(track) for track in json.loads(response.text)['tracks']]
     }

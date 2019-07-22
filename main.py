@@ -11,7 +11,7 @@ from datetime import datetime
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, get_listening_data, get_user_intersection, get_user_genres, get_recommendations, generate_playlist, get_tracks_from_id
+from playlist.helpers import refresh_token, load_user_data, get_user_intersection, get_user_genres, get_recommendations, generate_playlist, get_tracks_from_id
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -121,11 +121,7 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    user.song_data.saved_songs = get_listening_data(user_id, 'saved_songs')
-    user.song_data.top_songs= get_listening_data(user_id, 'top_songs')
-    user.song_data.top_artists= get_listening_data(user_id, 'top_artists')
-    user.song_data.followed_artists = get_listening_data(user_id, 'followed_artists')
-    user.save()
+    load_user_data(user)
 
     return (user.song_data.to_json(), 200)
 
@@ -209,11 +205,15 @@ def user_genres():
 @app.route('/intersection', methods=['GET'])
 @authorize_user
 def find_intersection():
+    
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first() 
         
+    load_user_data(user)
+    load_user_data(friend)
+    
     intersection = get_user_intersection(user, friend)
     return(json.dumps(intersection))
 
