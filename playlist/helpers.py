@@ -22,13 +22,12 @@ def refresh_token(user_id):
     if response.status_code !=200:
         response.raise_for_status()
 
-    user.sp_access_token=json.loads(response.text)['access_token']
+    user.sp_access_token=response.json()['access_token']
     user.save()
     return(user.sp_access_token)
 
 
-def get_listening_data(user_id, data_type):
-    user = User.objects(spotify_id=user_id).first()
+def get_listening_data(user, data_type):
 
     endpoints = {
         'saved_songs': 'https://api.spotify.com/v1/me/tracks?offset=0&limit=50',
@@ -39,18 +38,19 @@ def get_listening_data(user_id, data_type):
     
     url = endpoints[data_type];
     returned_list = []
+    access_token = user['sp_access_token']
     
     while url:
         response = requests.get(url, headers= {
-            'Authorization': F'Bearer {user.sp_access_token}'}) 
+            'Authorization': F'Bearer {access_token}'}) 
         if response.status_code == 401:
-            refresh_token(user_id)
+            refresh_token(user['spotify_id'])
         elif data_type =='followed_artists':
-            returned_list += json.loads(response.text)['artists']['items']
-            url = json.loads(response.text)['artists']['next']
+            returned_list += response.json()['artists']['items']
+            url = response.json()['artists']['next']
         else:
-            returned_list += json.loads(response.text)['items']
-            url = json.loads(response.text)['next']
+            returned_list += response.json()['items']
+            url = response.json()['next']
 
 
     if data_type=='followed_artists' or data_type=='top_artists':
@@ -61,10 +61,10 @@ def get_listening_data(user_id, data_type):
     return(returned_list)
 
 def load_user_data(user):
-    user.song_data.saved_songs = get_listening_data(user.spotify_id, 'saved_songs')
-    user.song_data.top_songs= get_listening_data(user.spotify_id, 'top_songs')
-    user.song_data.top_artists= get_listening_data(user.spotify_id, 'top_artists')
-    user.song_data.followed_artists = get_listening_data(user.spotify_id, 'followed_artists')
+    user.song_data.saved_songs = get_listening_data(user, 'saved_songs')
+    user.song_data.top_songs= get_listening_data(user, 'top_songs')
+    user.song_data.top_artists= get_listening_data(user, 'top_artists')
+    user.song_data.followed_artists = get_listening_data(user, 'followed_artists')
     user.save()
 
 def clean_artist_data(artist):
@@ -83,7 +83,6 @@ def clean_song_data(track):
         'name': track['name'],
         'id': track['id'],
         'artists': [artist['id'] for artist in track['artists']],
-        'album':  track['album']['id'],
         'explicit': track['explicit']
         }
     return(track)
@@ -156,7 +155,7 @@ def get_recommendations(intersection):
         response.raise_for_status
     
     recommendations = {'seeds': seed_names,
-        'recommendations': [clean_song_data(track) for track in json.loads(response.text)['tracks']]
+        'recommendations': [clean_song_data(track) for track in response.json()['tracks']]
     }
 
     return(json.dumps(recommendations))
@@ -183,7 +182,7 @@ def name_from_id(object_id, object_type, token):
     if response.status_code != 200:
         response.raise_for_status()
     else:
-        return json.loads(response.text)['name']
+        return response.json()['name']
 
 def generate_playlist(user1, user2):
     uid = os.getenv('SPOTIFY_USER_ID')
@@ -225,7 +224,7 @@ def get_tracks_from_id(playlist_id):
     response = requests.get(F'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers= {'Authorization': F'Bearer {token}'})
 
     if (response.status_code == 200):
-        tracks = json.loads(response.text)['items']
+        tracks = response.json()['items']
         tracks = [clean_playlist_track_data(track) for track in tracks]
         return tracks
     else:
