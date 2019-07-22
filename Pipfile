@@ -14,7 +14,6 @@ flask = "*"
 requests = "*"
 pyjwt = "*"
 pandas = "*"
-pytest = "*"
 nose = "*"
 
 [requires]

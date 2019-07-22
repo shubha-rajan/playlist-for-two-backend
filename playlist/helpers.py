@@ -61,10 +61,10 @@ def get_listening_data(user, data_type):
     return(returned_list)
 
 def load_user_data(user):
-    user.song_data.saved_songs = get_listening_data(user, 'saved_songs')
-    user.song_data.top_songs= get_listening_data(user, 'top_songs')
-    user.song_data.top_artists= get_listening_data(user, 'top_artists')
-    user.song_data.followed_artists = get_listening_data(user, 'followed_artists')
+    user['song_data']['saved_songs'] = get_listening_data(user, 'saved_songs')
+    user['song_data']['top_songs']= get_listening_data(user, 'top_songs')
+    user['song_data']['top_artists']= get_listening_data(user, 'top_artists')
+    user['song_data'].followed_artists = get_listening_data(user, 'followed_artists')
     user.save()
 
 def clean_artist_data(artist):
@@ -74,7 +74,6 @@ def clean_artist_data(artist):
         'images': artist['images'],
         'genres':artist['genres']
     })
-
 
 def clean_song_data(track):
     if 'track' in track:
@@ -88,8 +87,8 @@ def clean_song_data(track):
     return(track)
 
 def find_common_songs(user1, user2):
-    user1_songs = user1.song_data.top_songs + user1.song_data.saved_songs
-    user2_songs = user2.song_data.top_songs+ user2.song_data.saved_songs
+    user1_songs = user1['song_data']['top_songs'] + user1['song_data']['saved_songs']
+    user2_songs = user2['song_data']['top_songs']+ user2['song_data']['saved_songs']
 
     user1_songs = set([song['id'] for song in user1_songs])
     user2_songs = set([song['id'] for song in user2_songs])
@@ -97,13 +96,13 @@ def find_common_songs(user1, user2):
     return(list(user1_songs.intersection(user2_songs)))
 
 def find_common_artists(user1, user2):
-    user1_songs = user1.song_data['top_songs'] + user1.song_data['saved_songs']
+    user1_songs = user1['song_data']['top_songs'] + user1['song_data']['saved_songs']
     user1_artists_from_songs =  [artist for song in user1_songs for artist in song['artists'] ]
-    user1_artists = user1.song_data['top_artists'] + user1.song_data['followed_artists'] 
+    user1_artists = user1['song_data']['top_artists'] + user1['song_data']['followed_artists'] 
 
-    user2_songs = user2.song_data['top_songs'] + user2.song_data['saved_songs']
+    user2_songs = user2['song_data']['top_songs'] + user2['song_data']['saved_songs']
     user2_artists_from_songs =  [artist for song in user2_songs for artist in song['artists'] ]
-    user2_artists = user2.song_data['top_artists'] + user2.song_data['followed_artists']
+    user2_artists = user2['song_data']['top_artists'] + user2['song_data']['followed_artists']
 
     user1_artists = set([artist['id'] for artist in user1_artists] + user1_artists_from_songs)
     user2_artists = set([artist['id'] for artist in user2_artists] + user2_artists_from_songs)
@@ -111,7 +110,7 @@ def find_common_artists(user1, user2):
     return(list(user1_artists & user2_artists))
 
 def get_user_genres(user):
-    user_artists = user.song_data['top_artists'] + user.song_data['followed_artists']
+    user_artists = user['song_data']['top_artists'] + user['song_data']['followed_artists']
     user_genres = [genre for artist in user_artists for genre in artist['genres'] ]
     return (Counter(user_genres))
 
@@ -122,6 +121,9 @@ def find_common_genres(user1, user2):
     return(list(user1_top_genres & user2_top_genres))
 
 def get_user_intersection(user1, user2):
+    load_user_data(user1)
+    load_user_data(user2)
+
     intersection = {
         'common_songs': find_common_songs(user1, user2),
         'common_artists':find_common_artists(user1, user2),
@@ -258,7 +260,7 @@ def get_features(track):
 
 def get_song_analysis_matrix(user):
     token = refresh_token(user_id)
-    song_ids = ','.join([song['id'] for song in user.song_data.top_songs])
+    song_ids = ','.join([song['id'] for song in user['song_data']['top_songs']])
 
     response = requests.get(F'https://api.spotify.com/v1/audio-features/?ids={song_ids}',headers={
             'Authorization': F'Bearer {token}'})
