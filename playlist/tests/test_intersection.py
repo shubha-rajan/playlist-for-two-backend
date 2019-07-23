@@ -1,6 +1,6 @@
 from unittest.mock import Mock, patch
 from unittest import TestCase
-from playlist import helpers
+from playlist import intersection
 
 # Mock API data from Spotify API Docs :
 # https://developer.spotify.com/documentation/web-api/reference/
@@ -70,21 +70,21 @@ class TestFindIntersection(TestCase):
   
     def test_find_common_artists(self):
         result = ["0I2XqVXqHScXjHhk6AYYRe", "0oSGxfWSnnOXhD2fKuz2Gy", "1VBflYyxBhnDc9uVib98rw"]
-        common_artists = helpers.find_common_artists(self.user1, self.user2)
+        common_artists = intersection.find_common_artists(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_artists)
         self.assertCountEqual(result, common_artists)
 
     def test_find_common_songs(self):
         result = ["15iosIuxC3C53BgsM5Uggs"]
-        common_songs = helpers.find_common_songs(self.user1, self.user2)
+        common_songs = intersection.find_common_songs(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_songs)
         self.assertCountEqual(result, common_songs)
 
     def test_find_common_genres(self):
         result = ["swedish hip hop", "art rock", "glam rock", "permanent wave"]
-        common_genres = helpers.find_common_genres(self.user1, self.user2)
+        common_genres = intersection.find_common_genres(self.user1, self.user2)
         for genre in result:
             self.assertIn(genre, common_genres)
         self.assertCountEqual(result, common_genres)

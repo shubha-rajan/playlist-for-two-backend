@@ -11,7 +11,11 @@ from datetime import datetime
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, load_user_data, get_user_intersection, get_user_genres, get_recommendations, generate_playlist, get_tracks_from_id
+from playlist.helpers import refresh_token
+from playlist.listening_data import  load_user_data, get_user_genres
+from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list
+from playlist.intersection import get_user_intersection 
+from playlist.playlist_generation import get_recommendations, generate_playlist, get_tracks_from_id
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -135,25 +139,10 @@ def request_friend():
     user = User.objects(spotify_id=user_id).first() 
     requested = User.objects(spotify_id=friend_id).first()
 
-    user.friends.append(
-        Friendship(
-                status='requested',
-                friend_id=friend_id,
-                name=requested.name
-        )
-    )
-    user.save()
-
-        
-    requested.friends.append(
-        Friendship(
-                status='pending',
-                friend_id=user_id,
-                name=user.name
-        )
-    )
-    requested.save()
-    return (F"Successfully sent a friend request to user #{friend_id}.", 200)
+    if send_friend_request(user, requested):
+        return (F"Successfully sent a friend request to user #{friend_id}.", 200)
+    else:
+        return(F'Could not send friend request to #{friend_id}.', 400)
 
 @app.route('/accept-friend',methods=['POST'])
 @authorize_user
@@ -162,11 +151,10 @@ def accept_friend():
     user_id = request.form.get("user_id")
     friend_id = request.form.get("friend_id")
 
-    User.objects.filter(spotify_id=user_id, friends__friend_id=friend_id).update(set__friends__S__status='accepted')
-
-    User.objects.filter(spotify_id=friend_id, friends__friend_id=user_id).update(set__friends__S__status='accepted')
-
-    return (F"Successfully added user #{friend_id} as a friend.", 200)
+    if accept_friend_request(user_id, friend_id):
+        return (F"Successfully added user #{friend_id} as a friend.", 200)
+    else:
+        return(F'Could not add user #{friend_id} as a friend.', 400)
 
 @app.route('/friends',methods=['GET'])
 @authorize_user
@@ -175,18 +163,7 @@ def get_friends():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    incoming_requests= [friend.to_json() for friend in user.friends if friend.status=='pending']
-    sent_requests= [friend.to_json() for friend in user.friends if friend.status=='requested']
-    accepted_requests= [friend.to_json() for friend in user.friends if friend.status=='accepted']
-
-    response = {
-        "user":user_id, 
-        "friends": {
-            "incoming":incoming_requests,
-            "sent":sent_requests,
-            "accepted":accepted_requests,
-        }
-    }
+    response = get_friend_list(user)
     return(json.dumps(response), 200)
 
 @app.route('/users',methods=['GET'])
@@ -205,7 +182,6 @@ def user_genres():
 @app.route('/intersection', methods=['GET'])
 @authorize_user
 def find_intersection():
-    
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")

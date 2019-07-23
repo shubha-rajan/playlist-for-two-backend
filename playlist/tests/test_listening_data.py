@@ -1,14 +1,14 @@
 from unittest.mock import Mock, patch
 from unittest import TestCase
-from playlist import helpers
+from playlist import listening_data
 
 # Mock API data from Spotify API Docs :
 # https://developer.spotify.com/documentation/web-api/reference/
 
-class TestGetListeningDataHelpers(TestCase):
+class TestGetListeningData(TestCase):
     @classmethod
     def setup_class(cls):
-        cls.mock_get_patcher = patch('playlist.helpers.requests.get')
+        cls.mock_get_patcher = patch('playlist.listening_data.requests.get')
         cls.mock_get = cls.mock_get_patcher.start()
         cls.user = {
             "name":"Verlie Breitenberg",
@@ -88,7 +88,7 @@ class TestGetListeningDataHelpers(TestCase):
         self.mock_get.return_value = Mock()
         self.mock_get.return_value.json.return_value = response
 
-        top_artists = helpers.get_listening_data(self.user, 'top_artists')
+        top_artists = listening_data.get_listening_data(self.user, 'top_artists')
 
         self.assertListEqual(top_artists, result)
 
@@ -143,7 +143,7 @@ class TestGetListeningDataHelpers(TestCase):
         self.mock_get.return_value = Mock()
         self.mock_get.return_value.json.return_value = response
 
-        top_artists = helpers.get_listening_data(self.user, 'top_songs')
+        top_artists = listening_data.get_listening_data(self.user, 'top_songs')
 
         self.assertListEqual(top_artists, result)
 
@@ -238,7 +238,7 @@ class TestGetListeningDataHelpers(TestCase):
         self.mock_get.return_value = Mock()
         self.mock_get.return_value.json.return_value = response
 
-        top_artists = helpers.get_listening_data(self.user, 'saved_songs')
+        top_artists = listening_data.get_listening_data(self.user, 'saved_songs')
 
         self.assertListEqual(top_artists, result)
 
@@ -327,7 +327,7 @@ class TestGetListeningDataHelpers(TestCase):
         self.mock_get.return_value = Mock()
         self.mock_get.return_value.json.return_value = response
 
-        top_artists = helpers.get_listening_data(user, 'followed_artists')
+        top_artists = listening_data.get_listening_data(user, 'followed_artists')
 
         self.assertListEqual(top_artists, result)
 
