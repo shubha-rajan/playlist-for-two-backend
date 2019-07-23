@@ -30,6 +30,8 @@ def get_seeds(intersection):
     else:
         seeds = songs + artists + genres
     
+    return seeds
+    
 def get_recommendations(intersection):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
     

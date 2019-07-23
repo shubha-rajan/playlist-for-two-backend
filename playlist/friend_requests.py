@@ -5,7 +5,7 @@ from mongoengine import Document
 def send_friend_request(user, requested):
     outgoing_request = Friendship(
                 status='requested',
-                friend_id=friend_id,
+                friend_id=requested.spotify_id,
                 name=requested.name
         )
     user.friends.append(
@@ -14,7 +14,7 @@ def send_friend_request(user, requested):
 
     incoming_request = Friendship(
                 status='pending',
-                friend_id=user_id,
+                friend_id=user.spotify_id,
                 name=user.name
         )
     requested.friends.append(
@@ -23,27 +23,23 @@ def send_friend_request(user, requested):
     
     user.save()
     requested.save()
-    if user.friends.contains(outgoing_request) and requested.friends.contains(incoming_request):
+    if outgoing_request in user.friends and incoming_request in requested.friends:
         return True
     else:
         return False
 
 def accept_friend_request(user_id, friend_id):
+    print(friend_id)
+    print(user_id)
     try:
-        User.objects.get(spotify_id=user_id, friends__friend_id=friend_id, friends__status='pending').update(set__friends__S__status='accepted')
-    except Document.DoesNotExist as err:
-        print(err)
-        return False
-    except Document.MultipleObjectsReturned as err:
+        User.objects(spotify_id=user_id, friends__friend_id=friend_id, friends__status='pending').update(set__friends__S__status='accepted')
+    except Exception as err:
         print(err)
         return False
 
     try:
-        User.objects.get(spotify_id=friend_id, friends__friend_id=user_id, friends__status='requested').update(set__friends__S__status='accepted')
-    except Document.DoesNotExist as err:
-        print(err)
-        return False
-    except Document.MultipleObjectsReturned as err:
+        User.objects(spotify_id=friend_id, friends__friend_id=user_id, friends__status='requested').update(set__friends__S__status='accepted')
+    except Exception as err:
         print(err)
         return False
 

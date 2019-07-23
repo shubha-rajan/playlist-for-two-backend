@@ -214,7 +214,7 @@ def user_genres():
     except:
         return ({"error":"There was a problem retrieving information from the database"}, 400)
     else:
-        return(json.dumps(genres), 200)
+        return(json.dumps(dict(genres.most_common(20))), 200)
 
 @app.route('/intersection', methods=['GET'])
 @authorize_user
@@ -298,7 +298,7 @@ def create_new_playlist():
         friend.playlists.append(new_playlist)
         user.save()
         friend.save()
-        if user.playlists.contains(new_playlist) and friend.playlists.contains(new_playlist):
+        if new_playlist in user.playlists and new_playlist in friend.playlists:
             return (json.dumps(playlist))
         else:
             return (json.dumps({"error": "failed to save playlist"}), 400)
@@ -321,8 +321,7 @@ def get_playlists():
 @app.route('/playlist', methods=['GET']) 
 @authorize_user 
 def get_playlist_tracks():
-        playlist_uri= request.args.get("playlist_uri")
-        playlist_id = playlist_uri[17:]
+        playlist_id= request.args.get("playlist_id")
 
         try:
             track_list = get_tracks_from_id(playlist_id)
