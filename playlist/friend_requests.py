@@ -3,23 +3,27 @@ from .models import User, SongData, Friendship, Playlist
 from mongoengine import Document
 
 def send_friend_request(user, requested):
-    user.friends.append(
-        Friendship(
+    outgoing_request = Friendship(
                 status='requested',
                 friend_id=friend_id,
                 name=requested.name
         )
+    user.friends.append(
+        outgoing_request
     )
 
-    requested.friends.append(
-        Friendship(
+    incoming_request = Friendship(
                 status='pending',
                 friend_id=user_id,
                 name=user.name
         )
+    requested.friends.append(
+        incoming_request
     )
     
-    if user.save() and requested.save():
+    user.save()
+    requested.save()
+    if user.friends.contains(outgoing_request) and requested.friends.contains(incoming_request):
         return True
     else
         return False

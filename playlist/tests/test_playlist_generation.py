@@ -5,11 +5,10 @@ from playlist import playlist_generation
 # Mock API data from Spotify API Docs :
 # https://developer.spotify.com/documentation/web-api/reference/
 
-class TestPlaylistGeneration(TestCase):
+class TestRecommendations(TestCase):
     
     @classmethod
     def setup_class(cls):
-        cls.mock_get_user_intersection_patcher = patch('playlist.playlist_generation.get_user_intersection')
         cls.mock_refresh_token_patcher = patch('playlist.playlist_generation.refresh_token')
         cls.mock_get_patcher = patch('playlist.playlist_generation.requests.get')
         cls.mock_get_seeds_patcher = patch('playlist.playlist_generation.get_seeds')

@@ -215,22 +215,31 @@ def create_new_playlist():
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first()
 
-    playlist = generate_playlist(user, friend)
-
-    new_playlist = Playlist(
-        uri= playlist['uri'],
-        description=playlist['description'],
-        seeds=playlist['seeds'],
-        owners=[user_id, friend_id]
-    )
-
-    user.playlists.append(new_playlist)
-    user.save()
-    friend.playlists.append(new_playlist)
-    friend.save()
-
-
-    return (json.dumps(playlist))
+    try:
+        playlist = generate_playlist(user, friend)
+    except requests.exceptions.HTTPError as http_err:
+        print(http_err)
+    except requests.exceptions.ConnectionError as conn_err:
+        print(conn_err)
+    except requests.exceptions.Timeout as timeout_err:
+        print(timeout_err)
+    except requests.exceptions.RequestException as err:
+        print(err)
+    else:
+        new_playlist = Playlist(
+            uri= playlist['uri'],
+            description=playlist['description'],
+            seeds=playlist['seeds'],
+            owners=[user_id, friend_id]
+        )
+        user.playlists.append(new_playlist)
+        friend.playlists.append(new_playlist)
+        user.save()
+        friend.save()
+        if user.playlists.contains(new_playlist) and friend.playlists.contains(new_playlist):
+            return (json.dumps(playlist))
+        else:
+            return (json.dumps({"error": "failed to save playlist"}), 400)
 
 @app.route('/playlists', methods=['GET'])
 @authorize_user
