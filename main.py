@@ -193,8 +193,14 @@ def get_friends():
 @app.route('/users',methods=['GET'])
 @authorize_user
 def all_users():
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+
+    user_uid = decoded['id']
+    app_uid=os.getenv('SPOTIFY_USER_ID')
+
     try:
-        response = User.objects().only('name', 'spotify_id')
+        response = User.objects(spotify_id__nin=[user_uid, app_uid]).only('name', 'spotify_id')
     except:
         return ({"error":"There was a problem retrieving information from the database"}, 400)
     else:

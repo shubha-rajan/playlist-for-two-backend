@@ -27,8 +27,8 @@ def find_common_artists(user1, user2):
 
 
 def find_common_genres(user1, user2):
-    user1_top_genres = set(dict(get_user_genres(user1).most_common()).keys())
-    user2_top_genres = set(dict(get_user_genres(user2).most_common()).keys())
+    user1_top_genres = set(dict(get_user_genres(user1).most_common(20)).keys())
+    user2_top_genres = set(dict(get_user_genres(user2).most_common(20)).keys())
 
     return(list(user1_top_genres & user2_top_genres))
 
