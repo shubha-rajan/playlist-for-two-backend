@@ -125,9 +125,21 @@ def get_listening_history():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    load_user_data(user)
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
 
-    return (user.song_data.to_json(), 200)
+    try:
+        load_user_data(user)
+    except requests.exceptions.HTTPError as http_err:
+            print(http_err)
+    except requests.exceptions.ConnectionError as conn_err:
+            print(conn_err)
+    except requests.exceptions.Timeout as timeout_err:
+            print(timeout_err)
+    except requests.exceptions.RequestException as err:
+            print(err)
+    else:
+        return (user.song_data.to_json(), 200)
 
 @app.route('/request-friend',methods=['POST'])
 @authorize_user
@@ -138,6 +150,11 @@ def request_friend():
 
     user = User.objects(spotify_id=user_id).first() 
     requested = User.objects(spotify_id=friend_id).first()
+
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+    elif not requested:
+        return ({'error':F'could not find user with id {friend_id}'}, 404)
 
     if send_friend_request(user, requested):
         return (F"Successfully sent a friend request to user #{friend_id}.", 200)
@@ -163,21 +180,41 @@ def get_friends():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
 
-    response = get_friend_list(user)
-    return(json.dumps(response), 200)
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+
+    try:
+        response = get_friend_list(user)
+    except:
+        return ({"error":"There was a problem retrieving information from the database"}, 400)
+    else:
+        return(json.dumps(response), 200)
 
 @app.route('/users',methods=['GET'])
 @authorize_user
 def all_users():
-    response = User.objects().only('name', 'spotify_id')
-    return(response.to_json(), 200)
+    try:
+        response = User.objects().only('name', 'spotify_id')
+    except:
+        return ({"error":"There was a problem retrieving information from the database"}, 400)
+    else:
+        return(response.to_json(), 200)
 
 @app.route('/genres',methods=['GET'])
 @authorize_user
 def user_genres():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
-    return(json.dumps(get_user_genres(user)))
+
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+
+    try:
+        genres = get_user_genres(user)
+    except:
+        return ({"error":"There was a problem retrieving information from the database"}, 400)
+    else:
+        return(json.dumps(genres), 200)
 
 @app.route('/intersection', methods=['GET'])
 @authorize_user
@@ -186,12 +223,26 @@ def find_intersection():
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first() 
-        
-    load_user_data(user)
-    load_user_data(friend)
+
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+    elif not friend:
+        return ({'error':F'could not find user with id {friend_id}'}, 404)
     
-    intersection = get_user_intersection(user, friend)
-    return(json.dumps(intersection))
+    try:  
+        load_user_data(user)
+        load_user_data(friend)
+    except requests.exceptions.HTTPError as http_err:
+        print(http_err)
+    except requests.exceptions.ConnectionError as conn_err:
+        print(conn_err)
+    except requests.exceptions.Timeout as timeout_err:
+        print(timeout_err)
+    except requests.exceptions.RequestException as err:
+        print(err)
+    else:
+        intersection = get_user_intersection(user, friend)
+        return(json.dumps(intersection), 200)
 
 @app.route('/recommendations', methods=['GET'])
 @authorize_user
@@ -201,8 +252,14 @@ def find_reccomendations():
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first() 
-        
+    
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+    elif not friend:
+        return ({'error':F'could not find user with id {friend_id}'}, 404)
+
     intersection = get_user_intersection(user, friend)
+
     result = get_recommendations(intersection)
     return(result)
 
@@ -215,6 +272,11 @@ def create_new_playlist():
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first()
 
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+    elif not friend:
+        return ({'error':F'could not find user with id {friend_id}'}, 404)
+    
     try:
         playlist = generate_playlist(user, friend)
     except requests.exceptions.HTTPError as http_err:
@@ -249,9 +311,12 @@ def get_playlists():
     user = User.objects(spotify_id=user_id).first() 
     friend_id = request.args.get("friend_id")
 
+    if not user:
+        return ({'error':F'could not find user with id {user_id}'}, 404)
+    
     shared_playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
 
-    return (json.dumps(shared_playlists))
+    return (json.dumps(shared_playlists), 200)
 
 @app.route('/playlist', methods=['GET']) 
 @authorize_user 
@@ -270,5 +335,5 @@ def get_playlist_tracks():
         except requests.exceptions.RequestException as err:
             print(err)
         else:
-            return (json.dumps(track_list))
+            return (json.dumps(track_list), 200)
 

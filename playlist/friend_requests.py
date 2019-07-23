@@ -25,7 +25,7 @@ def send_friend_request(user, requested):
     requested.save()
     if user.friends.contains(outgoing_request) and requested.friends.contains(incoming_request):
         return True
-    else
+    else:
         return False
 
 def accept_friend_request(user_id, friend_id):
