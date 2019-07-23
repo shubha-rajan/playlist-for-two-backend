@@ -19,10 +19,8 @@ def clean_playlist_track_data(track):
             'artists': [artist['name'] for artist in track['artists']]
         }
     )
-
-def get_recommendations(intersection):
-    token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
     
+def get_seeds(intersection):
     songs = [{song_id : 'song'} for song_id in intersection['common_songs']]
     artists = [{artist_id : 'artist'} for artist_id in intersection['common_artists']]
     genres = [{genre : 'genre'} for genre in intersection['common_genres']]
@@ -31,7 +29,11 @@ def get_recommendations(intersection):
         seeds = random.sample((songs + artists + genres), 5)
     else:
         seeds = songs + artists + genres
-    seed_names = get_seed_names(seeds, token)
+    
+def get_recommendations(intersection):
+    token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
+    
+    seeds = get_seeds(intersection)
 
     seed_songs = ','.join([list(item.keys())[0] for item in seeds if 'song' in item.values()])
     seed_artists = ','.join([list(item.keys())[0] for item in seeds if 'artist' in item.values()])
@@ -39,6 +41,7 @@ def get_recommendations(intersection):
 
     request_url = F'https://api.spotify.com/v1/recommendations?seed_tracks={seed_songs}&seed_artists={seed_artists}&seed_genres={seed_genres}'
 
+    seed_names = get_seed_names(seeds, token)
 
     response = requests.get(request_url, 
             headers= {'Authorization': F'Bearer {token}'})
