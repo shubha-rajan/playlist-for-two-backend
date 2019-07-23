@@ -1,5 +1,7 @@
 from .models import User, SongData, Friendship, Playlist
 
+from mongoengine import Document
+
 def send_friend_request(user, requested):
     user.friends.append(
         Friendship(
@@ -8,9 +10,7 @@ def send_friend_request(user, requested):
                 name=requested.name
         )
     )
-    user.save()
 
-        
     requested.friends.append(
         Friendship(
                 status='pending',
@@ -18,14 +18,30 @@ def send_friend_request(user, requested):
                 name=user.name
         )
     )
-    requested.save()
-
-    return True
+    
+    if user.save() and requested.save():
+        return True
+    else
+        return False
 
 def accept_friend_request(user_id, friend_id):
-    User.objects.filter(spotify_id=user_id, friends__friend_id=friend_id).update(set__friends__S__status='accepted')
+    try:
+        User.objects.get(spotify_id=user_id, friends__friend_id=friend_id, friends__status='pending').update(set__friends__S__status='accepted')
+    except Document.DoesNotExist as err:
+        print(err)
+        return False
+    except Document.MultipleObjectsReturned as err:
+        print(err)
+        return False
 
-    User.objects.filter(spotify_id=friend_id, friends__friend_id=user_id).update(set__friends__S__status='accepted')
+    try:
+        User.objects.get(spotify_id=friend_id, friends__friend_id=user_id, friends__status='requested').update(set__friends__S__status='accepted')
+    except Document.DoesNotExist as err:
+        print(err)
+        return False
+    except Document.MultipleObjectsReturned as err:
+        print(err)
+        return False
 
     return True
 

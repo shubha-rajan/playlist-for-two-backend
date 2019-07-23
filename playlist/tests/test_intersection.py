@@ -88,3 +88,13 @@ class TestFindIntersection(TestCase):
         for genre in result:
             self.assertIn(genre, common_genres)
         self.assertCountEqual(result, common_genres)
+
+    def test_find_user_intersection(self):
+        result = {
+        'common_songs': intersection.find_common_songs(self.user1, self.user2),
+        'common_artists':intersection.find_common_artists(self.user1, self.user2),
+        'common_genres': intersection.find_common_genres(self.user1, self.user2),
+        }
+
+        common_items = intersection.get_user_intersection(self.user1, self.user2)
+        self.assertDictEqual(result, common_items)
