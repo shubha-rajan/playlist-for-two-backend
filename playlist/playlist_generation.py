@@ -21,8 +21,8 @@ def clean_playlist_track_data(track):
     )
     
 def get_seeds(intersection):
-    songs = [{song_id : 'song'} for song_id in intersection['common_songs']]
-    artists = [{artist_id : 'artist'} for artist_id in intersection['common_artists']]
+    songs = [{song['id'] : 'song'} for song in intersection['common_songs']]
+    artists = [{artist['id'] : 'artist'} for artist in intersection['common_artists']]
     genres = [{genre : 'genre'} for genre in intersection['common_genres']]
 
     if len(songs + artists + genres) > 5:

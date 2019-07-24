@@ -28,8 +28,8 @@ class TestRecommendations(TestCase):
     def test_get_recommendations(self):
         self.maxDiff =None
         intersection = {
-        'common_songs': ["15iosIuxC3C53BgsM5Uggs"],
-        'common_artists':["0I2XqVXqHScXjHhk6AYYRe", "0oSGxfWSnnOXhD2fKuz2Gy", "1VBflYyxBhnDc9uVib98rw"],
+        'common_songs': [{"name":"All Night", "id":"15iosIuxC3C53BgsM5Uggs"}],
+        'common_artists':[{'name':"Afasi & Filthy", 'id':"0I2XqVXqHScXjHhk6AYYRe"}, {'id':"0oSGxfWSnnOXhD2fKuz2Gy", 'name':'David Bowie'}, {'id':"1VBflYyxBhnDc9uVib98rw", 'name':'Icona Pop'}],
         'common_genres': ["swedish hip hop", "art rock", "glam rock", "permanent wave"],
         }
 
@@ -136,7 +136,7 @@ class TestRecommendations(TestCase):
                     'id': "15iosIuxC3C53BgsM5Uggs",
                     'artists': [ {'id':'1VBflYyxBhnDc9uVib98rw', 'name':'Icona Pop'} ],
                     'explicit': False,
-                }
+            }
             ]
         }
 

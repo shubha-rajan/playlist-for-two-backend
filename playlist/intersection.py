@@ -44,6 +44,7 @@ def find_common_artists(user1, user2):
     user1_artists = set([artist['id'] for artist in user1_artists])
     user2_artists = set([artist['id'] for artist in user2_artists])
 
+    
     common_artist_ids = user1_artists & user2_artists
 
     result = []
