@@ -127,14 +127,14 @@ class TestRecommendations(TestCase):
             'seeds': [ "glam rock (genre)" , "Icona Pop (artist)", "permanent wave (genre)","All Night (song)"],
             'recommendations': [
                 { 
-                    'artists': ['134GdR5tUtxJrf8cpsfpyY', '1D2oK3cJRq97OXDzu77BFR'],
+                    'artists': [{'id':'134GdR5tUtxJrf8cpsfpyY','name':'Elliphant' },{'id':'1D2oK3cJRq97OXDzu77BFR', 'name': 'Ras Fraser Jr.'}],
                     'explicit': False,
                     'id': '1TKYPzH66GwsqyJFKFkBHQ',
                     'name': 'Music Is Life'},
                 {
                     'name': "All Night",
                     'id': "15iosIuxC3C53BgsM5Uggs",
-                    'artists': [ '1VBflYyxBhnDc9uVib98rw' ],
+                    'artists': [ {'id':'1VBflYyxBhnDc9uVib98rw', 'name':'Icona Pop'} ],
                     'explicit': False,
                 }
             ]

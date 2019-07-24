@@ -136,7 +136,7 @@ class TestGetListeningData(TestCase):
         result = [{
             'name': "All Night",
             'id': "15iosIuxC3C53BgsM5Uggs",
-            'artists': [ '1VBflYyxBhnDc9uVib98rw' ],
+            'artists': [ {'id':'1VBflYyxBhnDc9uVib98rw', 'name':'Icona Pop'} ],
             'explicit': False,
         }]
                 
@@ -231,7 +231,7 @@ class TestGetListeningData(TestCase):
         result = [{
             'name': "Good Enough For Granddad",
             'id': "2jpDioAB9tlYXMdXDK3BGl",
-            'artists': [ "0LIll5i3kwo5A3IDpipgkS" ],
+            'artists': [ {'name': 'Squirrel Nut Zippers', 'id':"0LIll5i3kwo5A3IDpipgkS"} ],
             'explicit': False,
         }]
                 

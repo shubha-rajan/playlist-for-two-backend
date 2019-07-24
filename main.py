@@ -15,7 +15,7 @@ from playlist.helpers import refresh_token
 from playlist.listening_data import  load_user_data, get_user_genres
 from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list
 from playlist.intersection import get_user_intersection 
-from playlist.playlist_generation import get_recommendations, generate_playlist, get_tracks_from_id
+from playlist.playlist_generation import name_from_id, get_recommendations, generate_playlist, get_tracks_from_id
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -248,6 +248,11 @@ def find_intersection():
         print(err)
     else:
         intersection = get_user_intersection(user, friend)
+        intersection = {
+            "common_songs": [json.dumps({'name':name_from_id(song_id, 'track'), 'id':song_id}) for song_id in intersection['common_songs']],
+            "common_artists": [json.dumps({'name':name_from_id(artist_id, 'artist'), 'id':artist_id}) for artist_id in intersection['common_artists']],
+            'common_genres': intersection['common_genres']
+        }
         return(json.dumps(intersection), 200)
 
 @app.route('/recommendations', methods=['GET'])

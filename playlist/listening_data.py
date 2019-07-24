@@ -57,7 +57,7 @@ def clean_song_data(track):
     track = {
         'name': track['name'],
         'id': track['id'],
-        'artists': [artist['id'] for artist in track['artists']],
+        'artists': [{'id':artist['id'], 'name':artist['name']} for artist in track['artists']],
         'explicit': track['explicit']
         }
     return(track)

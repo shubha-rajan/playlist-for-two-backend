@@ -31,14 +31,12 @@ class TestFindIntersection(TestCase):
                     'genres':[ "swedish hip hop" ]
                 }, 
             ],
-            'top_songs': [
-            {
-                'name': "All Night",
-                'id': "15iosIuxC3C53BgsM5Uggs",
-                'artists': [ '1VBflYyxBhnDc9uVib98rw' ],
-                'explicit': False,
-            }
-            ],
+            'top_songs': [{
+            'name': "All Night",
+            'id': "15iosIuxC3C53BgsM5Uggs",
+            'artists': [ {'id':'1VBflYyxBhnDc9uVib98rw', 'name':'Icona Pop'} ],
+            'explicit': False,
+        }],
             'top_artists': [
                 {
                     'name': "David Bowie",
@@ -69,14 +67,14 @@ class TestFindIntersection(TestCase):
         
   
     def test_find_common_artists(self):
-        result = ["0I2XqVXqHScXjHhk6AYYRe", "0oSGxfWSnnOXhD2fKuz2Gy", "1VBflYyxBhnDc9uVib98rw"]
+        result = [{'name':"Afasi & Filthy", 'id':"0I2XqVXqHScXjHhk6AYYRe"}, {'id':"0oSGxfWSnnOXhD2fKuz2Gy", 'name':'David Bowie'}, {'id':"1VBflYyxBhnDc9uVib98rw", 'name':'Icona Pop'}]
         common_artists = intersection.find_common_artists(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_artists)
         self.assertCountEqual(result, common_artists)
 
     def test_find_common_songs(self):
-        result = ["15iosIuxC3C53BgsM5Uggs"]
+        result = [{"name":"All Night", "id":"15iosIuxC3C53BgsM5Uggs"}]
         common_songs = intersection.find_common_songs(self.user1, self.user2)
         for artist_id in result:
             self.assertIn(artist_id, common_songs)

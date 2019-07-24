@@ -31,7 +31,7 @@ def get_seeds(intersection):
         seeds = songs + artists + genres
     
     return seeds
-    
+
 def get_recommendations(intersection):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
     
@@ -73,7 +73,9 @@ def get_seed_names(seeds, token):
             seed_names.append(F'{genre} (genre)')
     return seed_names  
 
-def name_from_id(object_id, object_type, token):
+def name_from_id(object_id, object_type, token=None):
+    if not token:
+        token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
     response = requests.get(F'https://api.spotify.com/v1/{object_type}s/{object_id}', headers={'Authorization': F'Bearer {token}' })
     if response.status_code != 200:
         response.raise_for_status()
