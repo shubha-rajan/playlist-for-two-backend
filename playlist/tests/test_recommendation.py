@@ -140,6 +140,6 @@ class TestRecommendations(TestCase):
             ]
         }
 
-        recommendations = playlist_generation.get_recommendations(intersection)
+        recommendations = playlist_generation.get_recommendations_from_intersection(intersection)
 
         self.assertDictEqual(result, recommendations)

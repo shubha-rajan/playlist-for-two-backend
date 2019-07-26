@@ -15,7 +15,7 @@ from playlist.helpers import refresh_token
 from playlist.listening_data import  load_user_data, get_user_genres
 from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list
 from playlist.intersection import get_user_intersection 
-from playlist.playlist_generation import get_recommendations, generate_playlist, get_tracks_from_id
+from playlist.playlist_generation import get_recommendations_from_intersection, generate_playlist, get_tracks_from_id
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -192,7 +192,7 @@ def get_friends():
 @app.route('/user',methods=['GET'])
 @authorize_user
 def get__user_info():
-    user_id = request.form.get("user_id")
+    user_id = request.args.get("user_id")
 
     user = User.objects(spotify_id=user_id).first() 
     if user:
@@ -282,9 +282,18 @@ def find_reccomendations():
         return ({'error':F'could not find user with id {friend_id}'}, 404)
 
     intersection = get_user_intersection(user, friend)
-
-    result = get_recommendations(intersection)
-    return(result)
+    try:
+        result = get_recommendations_from_intersection(intersection)
+    except requests.exceptions.HTTPError as http_err:
+        print(http_err)
+    except requests.exceptions.ConnectionError as conn_err:
+        print(conn_err)
+    except requests.exceptions.Timeout as timeout_err:
+        print(timeout_err)
+    except requests.exceptions.RequestException as err:
+        print(err)
+    else:
+        return(result)
 
 @app.route('/new-playlist', methods=['POST'])
 @authorize_user
@@ -295,13 +304,17 @@ def create_new_playlist():
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first()
 
+    seeds = json.loads(request.form.get('seeds'))
+    features = json.loads(request.form.get('features'))
+
+
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
     try:
-        playlist = generate_playlist(user, friend)
+        playlist = generate_playlist(user, friend, seeds, features)
     except requests.exceptions.HTTPError as http_err:
         print(http_err)
     except requests.exceptions.ConnectionError as conn_err:
@@ -317,8 +330,10 @@ def create_new_playlist():
             seeds=playlist['seeds'],
             owners=[user_id, friend_id]
         )
+        
         user.playlists.append(new_playlist)
         friend.playlists.append(new_playlist)
+        print(new_playlist.seeds)
         user.save()
         friend.save()
         if new_playlist in user.playlists and new_playlist in friend.playlists:
