@@ -13,7 +13,7 @@ import mongoengine
 from playlist.models import User, SongData, Friendship, Playlist
 from playlist.helpers import refresh_token
 from playlist.listening_data import  load_user_data, get_user_genres
-from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list
+from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list, remove_friend_from_database
 from playlist.intersection import get_user_intersection 
 from playlist.playlist_generation import get_recommendations_from_intersection, generate_playlist, get_tracks_from_id
 
@@ -172,6 +172,18 @@ def accept_friend():
         return (F"Successfully added user #{friend_id} as a friend.", 200)
     else:
         return(F'Could not add user #{friend_id} as a friend.', 400)
+
+@app.route('/remove-friend',methods=['POST'])
+@authorize_user
+@confirm_user_identity
+def remove_friend():
+    user_id = request.form.get("user_id")
+    friend_id = request.form.get("friend_id")
+
+    if remove_friend_from_database(user_id, friend_id):
+        return (F"Successfully removed user #{friend_id} from friends.", 200)
+    else:
+        return(F'Could not remove user #{friend_id} from friends.', 400)
 
 @app.route('/friends',methods=['GET'])
 @authorize_user
