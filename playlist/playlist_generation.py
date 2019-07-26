@@ -48,8 +48,9 @@ def get_recommendations(intersection):
     response = requests.get(request_url, 
             headers= {'Authorization': F'Bearer {token}'})
     if response.status_code != 200:
-        response.raise_for_status
+        response.raise_for_status()
     
+    print(response.json())
     recommendations = {'seeds': seed_names,
         'recommendations': [clean_song_data(track) for track in response.json()['tracks']]
     }
@@ -104,7 +105,7 @@ def generate_playlist(user1, user2):
     create_playlist = requests.post(F'https://api.spotify.com/v1/users/{uid}/playlists', headers= {'Authorization': F'Bearer {token}' }, data = json.dumps(playlist_info))
 
     if create_playlist.status_code != 200:
-        create_playlist.raise_for_status
+        create_playlist.raise_for_status()
 
     playlist_id = create_playlist.json()['id']
 

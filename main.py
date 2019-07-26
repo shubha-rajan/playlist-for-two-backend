@@ -175,7 +175,6 @@ def accept_friend():
 
 @app.route('/friends',methods=['GET'])
 @authorize_user
-@confirm_user_identity
 def get_friends():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
@@ -189,6 +188,23 @@ def get_friends():
         return ({"error":"There was a problem retrieving information from the database"}, 400)
     else:
         return(json.dumps(response), 200)
+
+@app.route('/user',methods=['GET'])
+@authorize_user
+def get__user_info():
+    user_id = request.form.get("user_id")
+
+    user = User.objects(spotify_id=user_id).first() 
+    if user:
+        response = {
+                'name' : user.name,
+                'spotify_id': user.spotify_id,
+                'image_links':user.image_links,
+        }
+
+        return (json.dumps(response), 200)
+    else:
+        return ({'error': 'Could not locate user info'}, 404)
 
 @app.route('/users',methods=['GET'])
 @authorize_user
@@ -236,8 +252,9 @@ def find_intersection():
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
     try:  
+        print('hello!')
         # load_user_data(user)
-        load_user_data(friend)
+        # load_user_data(friend)
     except requests.exceptions.HTTPError as http_err:
         print(http_err)
     except requests.exceptions.ConnectionError as conn_err:
@@ -320,9 +337,11 @@ def get_playlists():
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
     
-    shared_playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
-
-    return (json.dumps(shared_playlists), 200)
+    if friend_id:
+        playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
+    else:
+        playlists = [json.loads(playlist.to_json()) for playlist in user.playlists]
+    return (json.dumps(playlists), 200)
 
 @app.route('/playlist', methods=['GET']) 
 @authorize_user 
