@@ -147,9 +147,9 @@ def generate_playlist(user1, user2, filter_explicit, seeds=None, features=None, 
 
     if not seeds and not features:
         intersection = get_user_intersection(user1, user2);
-        recommendations = get_recommendations_from_intersection(intersection, filterExplicit)
+        recommendations = get_recommendations_from_intersection(intersection, filter_explicit)
     else:
-        recommendations = get_recommendations_from_seeds(seeds, features, filterExplicit)
+        recommendations = get_recommendations_from_seeds(seeds, features, filter_explicit)
 
     seed_names = recommendations['seeds']
     recommendation_list = recommendations['recommendations']
