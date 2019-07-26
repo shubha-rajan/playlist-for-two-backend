@@ -40,6 +40,8 @@ def confirm_user_identity(func):
         if not user_id:
             user_id = request.form.get("user_id")
         user = User.objects(spotify_id=user_id).first() 
+        if not user:
+            return({"error": "Your token could not be verified"}, 401)
 
         encoded_jwt = request.headers.get("authorization")
         decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
