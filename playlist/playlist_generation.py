@@ -48,7 +48,7 @@ def get_recommendations_from_seeds(seeds, features):
         feature_min = value['min']
         feature_max = value['max']
         request_url += F'&{feature}_min={feature_min}&{feature}_max={feature_max}'
-        feature_names.append(F'{feature}: {feature_min} - {feature_max}')
+        feature_names.append(F'{feature}: {round(feature_min, 2)} - {round(feature_max, 2)}')
 
     response = requests.get(request_url, 
             headers= {'Authorization': F'Bearer {token}'})
@@ -146,7 +146,7 @@ def generate_playlist(user1, user2, seeds=None, features=None ):
     }
 
     if 'features' in recommendations:
-        playlist_info['description'] += ', '.join(recommendations['features'])
+        playlist_info['description'] += F", {', '.join(recommendations['features'])}"
 
 
     create_playlist = requests.post(F'https://api.spotify.com/v1/users/{uid}/playlists', headers= {'Authorization': F'Bearer {token}' }, data = json.dumps(playlist_info))
