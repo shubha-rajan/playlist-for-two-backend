@@ -319,8 +319,8 @@ def create_new_playlist():
 
     filter_explicit = request.args.get("filter_explicit")
 
-    seeds = request.form.get('seeds') ? json.loads(request.form.get('seeds')) : None
-    features = request.form.get('features') ? json.loads(request.form.get('features')) : None
+    seeds = request.form.get('seeds') if json.loads(request.form.get('seeds')) else None
+    features = request.form.get('features') if json.loads(request.form.get('features')) else None
 
 
     if not user:
