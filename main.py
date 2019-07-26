@@ -304,6 +304,8 @@ def create_new_playlist():
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first()
 
+    filter_explicit = request.args.get("filter_explicit")
+
     seeds = json.loads(request.form.get('seeds'))
     features = json.loads(request.form.get('features'))
 
@@ -314,7 +316,7 @@ def create_new_playlist():
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
     try:
-        playlist = generate_playlist(user, friend, seeds, features)
+        playlist = generate_playlist(user, friend, filter_explicit, seeds, features, )
     except requests.exceptions.HTTPError as http_err:
         print(http_err)
     except requests.exceptions.ConnectionError as conn_err:

@@ -32,7 +32,20 @@ def get_seeds(intersection):
     
     return seeds
 
-def get_recommendations_from_seeds(seeds, features):
+
+def get_filtered_recommendations(url, token):
+    tracks = []
+
+    while len(tracks) < 20:
+        response = requests.get(url, 
+                headers= {'Authorization': F'Bearer {token}'})
+        if response.status_code != 200:
+            response.raise_for_status()
+        tracks += [track for track in response.json()['tracks'] if not track['explicit']]
+    return random.sample(tracks, 20)
+
+
+def get_recommendations_from_seeds(seeds, features, filter_explicit):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
 
     seed_songs = ','.join(seeds['songs'])
@@ -50,11 +63,16 @@ def get_recommendations_from_seeds(seeds, features):
         request_url += F'&{feature}_min={feature_min}&{feature}_max={feature_max}'
         feature_names.append(F'{feature}: {round(feature_min, 2)} - {round(feature_max, 2)}')
 
-    response = requests.get(request_url, 
-            headers= {'Authorization': F'Bearer {token}'})
-    if response.status_code != 200:
-        response.raise_for_status()
-    
+    tracks = []
+    if filter_explicit:
+        tracks = get_filtered_recommendations(request_url, token)
+    else:
+        response = requests.get(request_url, 
+                headers= {'Authorization': F'Bearer {token}'})
+        if response.status_code != 200:
+            response.raise_for_status()
+        tracks = response.json()['tracks']
+
     seed_ids = [{song:'song'} for song in seeds['songs']]
     seed_ids += [{artist:'artist'} for artist in seeds['artists']]
     seed_ids += [{genre:'genre'} for genre in seeds['genres']]
@@ -63,16 +81,15 @@ def get_recommendations_from_seeds(seeds, features):
     
     recommendations = {'seeds': seed_names,
         'features': feature_names,
-        'recommendations': [clean_song_data(track) for track in response.json()['tracks']]
+        'recommendations': [clean_song_data(track) for track in tracks]
     }
 
     return(recommendations)
 
 
 
-def get_recommendations_from_intersection(intersection):
+def get_recommendations_from_intersection(intersection, filter_explicit):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
-    
     seeds = get_seeds(intersection)
 
     seed_songs = ','.join([list(item.keys())[0] for item in seeds if 'song' in item.values()])
@@ -83,14 +100,18 @@ def get_recommendations_from_intersection(intersection):
 
     seed_names = get_seed_names(seeds, token)
 
-    response = requests.get(request_url, 
-            headers= {'Authorization': F'Bearer {token}'})
-    if response.status_code != 200:
-        response.raise_for_status()
-    
+    tracks = []
+    if filter_explicit:
+        tracks = get_filtered_recommendations(request_url, token)
+    else:
+        response = requests.get(request_url, 
+                headers= {'Authorization': F'Bearer {token}'})
+        if response.status_code != 200:
+            response.raise_for_status()
+        tracks = response.json()['tracks']
 
     recommendations = {'seeds': seed_names,
-        'recommendations': [clean_song_data(track) for track in response.json()['tracks']]
+        'recommendations': [clean_song_data(track) for track in tracks]
     }
 
     return(recommendations)
@@ -121,14 +142,14 @@ def name_from_id(object_id, object_type, token=None):
     else:
         return response.json()['name']
 
-def generate_playlist(user1, user2, seeds=None, features=None ):
+def generate_playlist(user1, user2, filter_explicit, seeds=None, features=None, ):
     uid = os.getenv('SPOTIFY_USER_ID')
 
     if not seeds and not features:
         intersection = get_user_intersection(user1, user2);
-        recommendations = get_recommendations_from_intersection(intersection)
+        recommendations = get_recommendations_from_intersection(intersection, filterExplicit)
     else:
-        recommendations = get_recommendations_from_seeds(seeds, features)
+        recommendations = get_recommendations_from_seeds(seeds, features, filterExplicit)
 
     seed_names = recommendations['seeds']
     recommendation_list = recommendations['recommendations']

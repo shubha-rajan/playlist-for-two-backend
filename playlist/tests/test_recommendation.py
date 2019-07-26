@@ -1,4 +1,4 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 from unittest import TestCase
 from playlist import playlist_generation
 
@@ -17,25 +17,15 @@ class TestRecommendations(TestCase):
         cls.mock_get = cls.mock_get_patcher.start()
         cls.mock_get_seeds = cls.mock_get_seeds_patcher.start()
         cls.mock_get_seed_names = cls.mock_get_seed_names_patcher.start()
-    
-    @classmethod
-    def teardown_class(cls):
-        cls.mock_get.stop()
-        cls.mock_refresh_token.stop()
-        cls.mock_get_seeds.stop()
-        cls.mock_get_seed_names.stop()
-
-    def test_get_recommendations(self):
-        self.maxDiff =None
-        intersection = {
+        cls.intersection = {
         'common_songs': [{"name":"All Night", "id":"15iosIuxC3C53BgsM5Uggs"}],
         'common_artists':[{'name':"Afasi & Filthy", 'id':"0I2XqVXqHScXjHhk6AYYRe"}, {'id':"0oSGxfWSnnOXhD2fKuz2Gy", 'name':'David Bowie'}, {'id':"1VBflYyxBhnDc9uVib98rw", 'name':'Icona Pop'}],
         'common_genres': ["swedish hip hop", "art rock", "glam rock", "permanent wave"],
         }
 
-        seeds = [{"glam rock":"genre"}, {"1VBflYyxBhnDc9uVib98rw": "artist"}, {"permanent wave": "genre"},{"15iosIuxC3C53BgsM5Uggs":"song"}]
+        cls.seeds = [{"glam rock":"genre"}, {"1VBflYyxBhnDc9uVib98rw": "artist"}, {"permanent wave": "genre"},{"15iosIuxC3C53BgsM5Uggs":"song"}]
 
-        response = {
+        cls.response = {
             "tracks": [
                 {
                 "artists" : [ {
@@ -84,7 +74,7 @@ class TestRecommendations(TestCase):
                 } ],
                     "disc_number" : 1,
                     "duration_ms" : 187026,
-                    "explicit" : False,
+                    "explicit" : True,
                     "external_urls" : {
                     "spotify" : "https://open.spotify.com/track/15iosIuxC3C53BgsM5Uggs"
                     },
@@ -116,12 +106,22 @@ class TestRecommendations(TestCase):
                 }
             ]
         }
+    
+    @classmethod
+    def teardown_class(cls):
+        cls.mock_get.stop()
+        cls.mock_refresh_token.stop()
+        cls.mock_get_seeds.stop()
+        cls.mock_get_seed_names.stop()
+
+    def test_get_recommendations(self):
+        self.maxDiff =None
         
         self.mock_refresh_token.return_value = '1234567890'
-        self.mock_get_seeds.return_value = seeds
+        self.mock_get_seeds.return_value = self.seeds
         self.mock_get_seed_names.return_value = [ "glam rock (genre)" , "Icona Pop (artist)", "permanent wave (genre)","All Night (song)"]
-        self.mock_get.return_value = Mock()
-        self.mock_get.return_value.json.return_value = response
+        self.mock_get.return_value = MagicMock()
+        self.mock_get.return_value.json.return_value = self.response
 
         result = {
             'seeds': [ "glam rock (genre)" , "Icona Pop (artist)", "permanent wave (genre)","All Night (song)"],
@@ -135,11 +135,23 @@ class TestRecommendations(TestCase):
                     'name': "All Night",
                     'id': "15iosIuxC3C53BgsM5Uggs",
                     'artists': [ {'id':'1VBflYyxBhnDc9uVib98rw', 'name':'Icona Pop'} ],
-                    'explicit': False,
+                    'explicit': True,
             }
             ]
         }
 
-        recommendations = playlist_generation.get_recommendations_from_intersection(intersection)
+        recommendations = playlist_generation.get_recommendations_from_intersection(self.intersection, False)
 
         self.assertDictEqual(result, recommendations)
+    
+    def test_explicit_filter(self):
+        self.mock_refresh_token.return_value = '1234567890'
+        self.mock_get_seeds.return_value = self.seeds
+        self.mock_get_seed_names.return_value = [ "glam rock (genre)" , "Icona Pop (artist)", "permanent wave (genre)","All Night (song)"]
+        self.mock_get.return_value = Mock()
+        self.mock_get.return_value.json.return_value = self.response
+
+        result = playlist_generation.get_recommendations_from_intersection(self.intersection, True)
+
+        for recommendation in result['recommendations']:
+            self.assertNotEqual(recommendation['explicit'], True)
