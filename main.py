@@ -15,7 +15,7 @@ from playlist.helpers import refresh_token
 from playlist.listening_data import  load_user_data, get_user_genres
 from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list, remove_friend_from_database
 from playlist.intersection import get_user_intersection 
-from playlist.playlist_generation import get_recommendations_from_intersection, generate_playlist, get_tracks_from_id
+from playlist.playlist_generation import get_recommendations_from_intersection, generate_playlist, get_tracks_from_id, set_playlist_details
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -391,3 +391,39 @@ def get_playlist_tracks():
         else:
             return (json.dumps(track_list), 200)
 
+@app.route('/edit-playlist/', methods=['POST']) 
+@authorize_user 
+@confirm_user_identity
+def edit_playlist(){
+    encoded_jwt = request.headers.get("authorization")
+    decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
+
+    user_id = decoded['id']
+
+    playlist_uri = request.args.get("playlist_uri")
+    if not playlist_uri {
+        return (json.dumps({'error':'playlist uri is a required field'}), 400)
+    }
+    friend_id = request.form.get('friendID')
+
+    description = request.form.get('description')
+    name = request.form.get('description')
+
+    if description or name:
+        try:
+            success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
+        except requests.exceptions.HTTPError as http_err:
+            print(http_err)
+        except requests.exceptions.ConnectionError as conn_err:
+            print(conn_err)
+        except requests.exceptions.Timeout as timeout_err:
+            print(timeout_err)
+        except requests.exceptions.RequestException as err:
+            print(err)
+        else:
+            if success:
+                return(json.loads({'success': F'Successfully updated details for playlist {playlist_id}'}'))
+            else:
+                return (json.dumps({"error": "failed to update playlist details"}), 400)
+
+}

@@ -198,3 +198,38 @@ def get_tracks_from_id(playlist_id):
         response.raise_for_status()
 
     
+
+def set_playlist_details(description, name, playlist_uri, user_id, friend_id):
+    token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
+    playlist_id = playlist_uri[17:]
+
+    payload = {}
+    if name and description:
+        payload = {'description': description, name:'name'}
+    elif name:
+        payload = {name:'name'}
+    elif description:
+        payload = {'description': description}
+    else:
+        return False
+
+    response = requests.get(F'https://api.spotify.com/v1/playlists/{playlist_id}', headers= {'Authorization': F'Bearer {token}'}, data= payload)
+
+    if response.status_code != 200:
+        response.raise_for_status()
+    
+    if name:
+        try:
+            User.objects(user_id=user_id, playlists__uri=playlist_uri).update(set__playlists__description__S__name= name)
+            User.objects(user_id=friend_id, playlists__uri=playlist_uri).update(set__playlists__description__S__name= name)
+        except:
+            return False
+    
+    if description:
+        try:
+            User.objects(user_id=user_id, playlists__uri=playlist_uri).update(set__playlists__description__S__description= description)
+            User.objects(user_id=friend_id, playlists__uri=playlist_uri).update(set__playlists__description__S__description= description)
+        except:
+            return False
+
+    return True
