@@ -266,9 +266,8 @@ def find_intersection():
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
     try:  
-        print('hello!')
-        # load_user_data(user)
-        # load_user_data(friend)
+        load_user_data(user)
+        load_user_data(friend)
     except requests.exceptions.HTTPError as http_err:
         print(http_err)
     except requests.exceptions.ConnectionError as conn_err:
