@@ -1,7 +1,8 @@
 from mongoengine import *
-import datetime
+from datetime import datetime
 
 class SongData(EmbeddedDocument):
+    modified= DateTimeField(default=datetime.utcnow)
     saved_songs=ListField(DictField())
     followed_artists=ListField(DictField())
     top_songs=ListField(DictField())
@@ -9,7 +10,7 @@ class SongData(EmbeddedDocument):
 
 class Friendship(EmbeddedDocument):
     status= StringField(required=True, choices=("requested", "pending", "accepted"))
-    modified= DateTimeField(default=datetime.datetime.utcnow)
+    modified= DateTimeField(default=datetime.utcnow)
     friend_id = StringField(required=True)
     name = StringField()
 

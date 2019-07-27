@@ -6,7 +6,7 @@ import json
 import requests
 import os
 import jwt
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import mongoengine
 
@@ -97,6 +97,8 @@ def login_user():
         user.sp_refresh_token=json.loads(result.text)['refresh_token']
         user.save()
 
+    load_user_data(user)
+
     encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow()}, os.getenv('JWT_SECRET'), algorithm='HS256')
 
         
@@ -131,7 +133,8 @@ def get_listening_history():
         return ({'error':F'could not find user with id {user_id}'}, 404)
 
     try:
-        load_user_data(user)
+        if not user.song_data.modified or (datetime.utcnow()- user.song_data.modified > timedelta(days=7)):
+            load_user_data(user)
     except requests.exceptions.HTTPError as http_err:
             print(http_err)
     except requests.exceptions.ConnectionError as conn_err:
@@ -265,9 +268,11 @@ def find_intersection():
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
-    try:  
-        load_user_data(user)
-        load_user_data(friend)
+    try:
+        if datetime.utcnow() - user.song_data.modified > timedelta(days=7):  
+            load_user_data(user)
+        if datetime.utcnow() - friend.song_data.modified > timedelta(days=7): 
+            load_user_data(friend)
     except requests.exceptions.HTTPError as http_err:
         print(http_err)
     except requests.exceptions.ConnectionError as conn_err:
