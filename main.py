@@ -352,7 +352,7 @@ def create_new_playlist():
         user.save()
         friend.save()
         if new_playlist in user.playlists and new_playlist in friend.playlists:
-            return (json.dumps(playlist))
+            return (json.dumps(new_playlist.to_json()))
         else:
             return (json.dumps({"error": "failed to save playlist"}), 400)
 
@@ -391,27 +391,28 @@ def get_playlist_tracks():
         else:
             return (json.dumps(track_list), 200)
 
-@app.route('/edit-playlist/', methods=['POST']) 
+@app.route('/edit-playlist', methods=['POST']) 
 @authorize_user 
-@confirm_user_identity
-def edit_playlist(){
+def edit_playlist():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     user_id = decoded['id']
 
-    playlist_uri = request.args.get("playlist_uri")
-    if not playlist_uri {
+    playlist_uri = request.form.get("playlist_uri")
+    if not playlist_uri:
         return (json.dumps({'error':'playlist uri is a required field'}), 400)
-    }
+    
     friend_id = request.form.get('friendID')
 
     description = request.form.get('description')
-    name = request.form.get('description')
+
+    name = request.form.get('name')
 
     if description or name:
         try:
             success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
+            
         except requests.exceptions.HTTPError as http_err:
             print(http_err)
         except requests.exceptions.ConnectionError as conn_err:
@@ -422,8 +423,7 @@ def edit_playlist(){
             print(err)
         else:
             if success:
-                return(json.loads({'success': F'Successfully updated details for playlist {playlist_id}'}'))
+                return(json.dumps({'success': F'Successfully updated details for playlist {playlist_uri}'}))
             else:
                 return (json.dumps({"error": "failed to update playlist details"}), 400)
 
-}
