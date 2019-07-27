@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import mongoengine
 
 from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token
+from playlist.helpers import refresh_token, find_user_info
 from playlist.listening_data import  load_user_data, get_user_genres
 from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list, remove_friend_from_database
 from playlist.intersection import get_user_intersection 
@@ -110,17 +110,7 @@ def get_logged_in_user_info():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
-    user = User.objects(spotify_id=decoded['id']).first() 
-    if user:
-        response = {
-                'name' : user.name,
-                'spotify_id': user.spotify_id,
-                'image_links':user.image_links,
-        }
-
-        return (json.dumps(response), 200)
-    else:
-        return ({'error': 'Could not locate user info'}, 404)
+    return(find_user_info(decoded['id']))
 
 @app.route('/listening-history',methods=['GET'])
 @authorize_user
@@ -211,17 +201,7 @@ def get_friends():
 def get__user_info():
     user_id = request.args.get("user_id")
 
-    user = User.objects(spotify_id=user_id).first() 
-    if user:
-        response = {
-                'name' : user.name,
-                'spotify_id': user.spotify_id,
-                'image_links':user.image_links,
-        }
-
-        return (json.dumps(response), 200)
-    else:
-        return ({'error': 'Could not locate user info'}, 404)
+    return ((find_user_info(user_id))
 
 @app.route('/users',methods=['GET'])
 @authorize_user

@@ -25,3 +25,16 @@ def refresh_token(user_id):
     user.sp_access_token=response.json()['access_token']
     user.save()
     return(user.sp_access_token)
+
+def find_user_info(user_id)
+    user = User.objects(spotify_id=user_id).first() 
+    if user:
+        response = {
+                'name' : user.name,
+                'spotify_id': user.spotify_id,
+                'image_links':user.image_links,
+        }
+
+        return (json.dumps(response), 200)
+    else:
+        return ({'error': 'Could not locate user info'}, 404)
