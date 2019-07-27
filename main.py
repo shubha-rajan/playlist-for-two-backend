@@ -274,7 +274,7 @@ def find_intersection():
         if datetime.utcnow() - friend.song_data.modified > timedelta(days=7): 
             load_user_data(friend)
     except requests.exceptions.HTTPError as http_err:
-        print(http_err)
+        print(http_err.response.json())
     except requests.exceptions.ConnectionError as conn_err:
         print(conn_err)
     except requests.exceptions.Timeout as timeout_err:

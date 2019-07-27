@@ -1,5 +1,10 @@
+import logging
 from mongoengine import *
+from mongoengine import signals
 from datetime import datetime
+
+def update_modified(sender, document):
+    document.modified = datetime.utcnow()
 
 class SongData(EmbeddedDocument):
     modified= DateTimeField(default=datetime.utcnow)
@@ -8,11 +13,17 @@ class SongData(EmbeddedDocument):
     top_songs=ListField(DictField())
     top_artists=ListField(DictField())
 
+    signals.pre_save.connect(update_modified, sender='User')
+
+
 class Friendship(EmbeddedDocument):
     status= StringField(required=True, choices=("requested", "pending", "accepted"))
     modified= DateTimeField(default=datetime.utcnow)
     friend_id = StringField(required=True)
     name = StringField()
+
+    signals.pre_save.connect(update_modified, sender='User')
+
 
 class Playlist(EmbeddedDocument):
     uri= StringField(required=True)
