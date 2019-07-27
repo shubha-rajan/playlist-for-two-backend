@@ -45,6 +45,17 @@ def get_filtered_recommendations(url, token):
         tracks += [track for track in response.json()['tracks'] if not track['explicit']]
     return random.sample(tracks, 20)
 
+def send_recommendation_request(request_url, token):
+    tracks = []
+    if filter_explicit:
+        tracks = get_filtered_recommendations(request_url, token)
+    else:
+        response = requests.get(request_url, 
+                headers= {'Authorization': F'Bearer {token}'})
+        if response.status_code != 200:
+            response.raise_for_status()
+        tracks = response.json()['tracks']
+        return tracks
 
 def get_recommendations_from_seeds(seeds, features, filter_explicit):
     token = refresh_token(os.getenv('SPOTIFY_USER_ID'))
@@ -64,15 +75,7 @@ def get_recommendations_from_seeds(seeds, features, filter_explicit):
         request_url += F'&{feature}_min={feature_min}&{feature}_max={feature_max}'
         feature_names.append(F'{feature}: {round(feature_min, 2)} - {round(feature_max, 2)}')
 
-    tracks = []
-    if filter_explicit:
-        tracks = get_filtered_recommendations(request_url, token)
-    else:
-        response = requests.get(request_url, 
-                headers= {'Authorization': F'Bearer {token}'})
-        if response.status_code != 200:
-            response.raise_for_status()
-        tracks = response.json()['tracks']
+    tracks = send_recommendation_request(request_url, token)
 
     seed_ids = [{song:'song'} for song in seeds['songs']]
     seed_ids += [{artist:'artist'} for artist in seeds['artists']]
@@ -101,15 +104,7 @@ def get_recommendations_from_intersection(intersection, filter_explicit):
 
     seed_names = get_seed_names(seeds, token)
 
-    tracks = []
-    if filter_explicit:
-        tracks = get_filtered_recommendations(request_url, token)
-    else:
-        response = requests.get(request_url, 
-                headers= {'Authorization': F'Bearer {token}'})
-        if response.status_code != 200:
-            response.raise_for_status()
-        tracks = response.json()['tracks']
+    tracks = send_recommendation_request(request_url, token)
 
     recommendations = {'seeds': seed_names,
         'recommendations': [clean_song_data(track) for track in tracks]

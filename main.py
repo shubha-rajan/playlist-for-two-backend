@@ -52,7 +52,21 @@ def confirm_user_identity(func):
             return func(*args, **kws)
     return function_with_identification
     
-
+def check_for_request_errors(func):
+    @wraps(func)
+    def function_with_request_error_handling(*args, **kws):
+        try:
+            result = func(*args, **kws)
+        except requests.exceptions.HTTPError as http_err:
+            print(http_err)
+        except requests.exceptions.ConnectionError as conn_err:
+            print(conn_err)
+        except requests.exceptions.Timeout as timeout_err:
+            print(timeout_err)
+        except requests.exceptions.RequestException as err:
+            print(err)
+        else:
+            return result
 
 @app.route('/',methods=['GET'])
 def hello_flask():
@@ -200,8 +214,7 @@ def get_friends():
 @authorize_user
 def get__user_info():
     user_id = request.args.get("user_id")
-
-    return ((find_user_info(user_id))
+    return ((find_user_info(user_id)))
 
 @app.route('/users',methods=['GET'])
 @authorize_user
@@ -237,6 +250,7 @@ def user_genres():
 
 @app.route('/intersection', methods=['GET'])
 @authorize_user
+@check_for_request_errors
 def find_intersection():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
@@ -247,27 +261,18 @@ def find_intersection():
         return ({'error':F'could not find user with id {user_id}'}, 404)
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
-    
-    try:
-        if datetime.utcnow() - user.song_data.modified > timedelta(days=7):  
-            load_user_data(user)
-        if datetime.utcnow() - friend.song_data.modified > timedelta(days=7): 
-            load_user_data(friend)
-    except requests.exceptions.HTTPError as http_err:
-        print(http_err.response.json())
-    except requests.exceptions.ConnectionError as conn_err:
-        print(conn_err)
-    except requests.exceptions.Timeout as timeout_err:
-        print(timeout_err)
-    except requests.exceptions.RequestException as err:
-        print(err)
-    else:
-        intersection = get_user_intersection(user, friend)
-        return(json.dumps(intersection), 200)
+
+    if datetime.utcnow() - user.song_data.modified > timedelta(days=7):  
+        load_user_data(user)
+    if datetime.utcnow() - friend.song_data.modified > timedelta(days=7): 
+        load_user_data(friend)
+    intersection = get_user_intersection(user, friend)
+    return(json.dumps(intersection), 200)
 
 @app.route('/recommendations', methods=['GET'])
 @authorize_user
 @confirm_user_identity
+@check_for_request_errors
 def find_reccomendations():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
@@ -280,22 +285,13 @@ def find_reccomendations():
         return ({'error':F'could not find user with id {friend_id}'}, 404)
 
     intersection = get_user_intersection(user, friend)
-    try:
-        result = get_recommendations_from_intersection(intersection)
-    except requests.exceptions.HTTPError as http_err:
-        print(http_err)
-    except requests.exceptions.ConnectionError as conn_err:
-        print(conn_err)
-    except requests.exceptions.Timeout as timeout_err:
-        print(timeout_err)
-    except requests.exceptions.RequestException as err:
-        print(err)
-    else:
-        return(result)
+    result = get_recommendations_from_intersection(intersection)
+    return(result)
 
 @app.route('/new-playlist', methods=['POST'])
 @authorize_user
 @confirm_user_identity
+@check_for_request_errors
 def create_new_playlist():
     user_id = request.args.get("user_id")
     user = User.objects(spotify_id=user_id).first() 
@@ -313,33 +309,24 @@ def create_new_playlist():
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
     
-    try:
-        playlist = generate_playlist(user, friend, filter_explicit, seeds, features, )
-    except requests.exceptions.HTTPError as http_err:
-        print(http_err)
-    except requests.exceptions.ConnectionError as conn_err:
-        print(conn_err)
-    except requests.exceptions.Timeout as timeout_err:
-        print(timeout_err)
-    except requests.exceptions.RequestException as err:
-        print(err)
+    playlist = generate_playlist(user, friend, filter_explicit, seeds, features)
+
+    new_playlist = Playlist(
+        uri= playlist['uri'],
+        description=playlist['description'],
+        seeds=playlist['seeds'],
+        owners=[user_id, friend_id]
+    )
+    
+    user.playlists.append(new_playlist)
+    friend.playlists.append(new_playlist)
+    print(new_playlist.seeds)
+    user.save()
+    friend.save()
+    if new_playlist in user.playlists and new_playlist in friend.playlists:
+        return (json.dumps(new_playlist.to_json()))
     else:
-        new_playlist = Playlist(
-            uri= playlist['uri'],
-            description=playlist['description'],
-            seeds=playlist['seeds'],
-            owners=[user_id, friend_id]
-        )
-        
-        user.playlists.append(new_playlist)
-        friend.playlists.append(new_playlist)
-        print(new_playlist.seeds)
-        user.save()
-        friend.save()
-        if new_playlist in user.playlists and new_playlist in friend.playlists:
-            return (json.dumps(new_playlist.to_json()))
-        else:
-            return (json.dumps({"error": "failed to save playlist"}), 400)
+        return (json.dumps({"error": "failed to save playlist"}), 400)
 
 @app.route('/playlists', methods=['GET'])
 @authorize_user
@@ -360,24 +347,15 @@ def get_playlists():
 
 @app.route('/playlist', methods=['GET']) 
 @authorize_user 
+@check_for_request_errors
 def get_playlist_tracks():
         playlist_id= request.args.get("playlist_id")
-
-        try:
-            track_list = get_tracks_from_id(playlist_id)
-        except requests.exceptions.HTTPError as http_err:
-            print(http_err)
-        except requests.exceptions.ConnectionError as conn_err:
-            print(conn_err)
-        except requests.exceptions.Timeout as timeout_err:
-            print(timeout_err)
-        except requests.exceptions.RequestException as err:
-            print(err)
-        else:
-            return (json.dumps(track_list), 200)
+        track_list = get_tracks_from_id(playlist_id)
+        return (json.dumps(track_list), 200)
 
 @app.route('/edit-playlist', methods=['POST']) 
 @authorize_user 
+@check_for_request_errors
 def edit_playlist():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
@@ -395,20 +373,9 @@ def edit_playlist():
     name = request.form.get('name')
 
     if description or name:
-        try:
-            success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
-            
-        except requests.exceptions.HTTPError as http_err:
-            print(http_err)
-        except requests.exceptions.ConnectionError as conn_err:
-            print(conn_err)
-        except requests.exceptions.Timeout as timeout_err:
-            print(timeout_err)
-        except requests.exceptions.RequestException as err:
-            print(err)
+         success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
+        if success:
+            return(json.dumps({'success': F'Successfully updated details for playlist {playlist_uri}'}))
         else:
-            if success:
-                return(json.dumps({'success': F'Successfully updated details for playlist {playlist_uri}'}))
-            else:
-                return (json.dumps({"error": "failed to update playlist details"}), 400)
+            return (json.dumps({"error": "failed to update playlist details"}), 400)
 
