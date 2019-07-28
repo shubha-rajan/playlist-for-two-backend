@@ -29,43 +29,23 @@ def send_friend_request(user, requested):
 
 
 def accept_friend_request(user_id, friend_id):
-    try:
-        User.objects(spotify_id=user_id,
-                     friends__friend_id=friend_id,
-                     friends__status='pending').update(set__friends__S__status='accepted')
-    except Exception as err:
-        print(err)
-        return False
+    User.objects(spotify_id=user_id,
+                 friends__friend_id=friend_id,
+                 friends__status='pending').update(set__friends__S__status='accepted')
 
-    try:
-        User.objects(spotify_id=friend_id,
-                     friends__friend_id=user_id,
-                     friends__status='requested').update(set__friends__S__status='accepted')
-    except Exception as err:
-        print(err)
-        return False
-
-    return True
+    User.objects(spotify_id=friend_id,
+                 friends__friend_id=user_id,
+                 friends__status='requested').update(set__friends__S__status='accepted')
 
 
 def remove_friend_from_database(user_id, friend_id):
     print(friend_id)
-    try:
-        User.objects(spotify_id=user_id).update_one(
-            pull__friends__friend_id=friend_id)
 
-    except Exception as err:
-        print(err)
-        return False
+    User.objects(spotify_id=user_id).update_one(
+        pull__friends__friend_id=friend_id)
 
-    try:
-        User.objects(spotify_id=friend_id).update_one(
-            pull__friends__friend_id=user_id)
-    except Exception as err:
-        print(err)
-        return False
-
-    return True
+    User.objects(spotify_id=friend_id).update_one(
+        pull__friends__friend_id=user_id)
 
 
 def get_friend_list(user):
