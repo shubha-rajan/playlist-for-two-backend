@@ -1,5 +1,3 @@
-"""Schema for mongoengine"""
-
 from datetime import datetime
 from mongoengine import (Document, EmbeddedDocument,
                          DateTimeField, ListField, DictField, EmbeddedDocumentField, StringField)
@@ -8,6 +6,7 @@ from mongoengine import signals
 
 def update_modified(document):
     document.modified = datetime.utcnow()
+
 
 class SongData(EmbeddedDocument):
     modified = DateTimeField(default=datetime.utcnow)
@@ -20,7 +19,8 @@ class SongData(EmbeddedDocument):
 
 
 class Friendship(EmbeddedDocument):
-    status = StringField(required=True, choices=("requested", "pending", "accepted"))
+    status = StringField(required=True, choices=(
+        "requested", "pending", "accepted"))
     modified = DateTimeField(default=datetime.utcnow)
     friend_id = StringField(required=True)
     name = StringField()
@@ -33,6 +33,7 @@ class Playlist(EmbeddedDocument):
     owners = ListField(StringField())
     description = DictField()
     seeds = ListField(StringField())
+
 
 class User(Document):
     name = StringField(required=True)
