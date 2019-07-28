@@ -1,21 +1,22 @@
-from flask import Flask, request, make_response
-from dotenv import load_dotenv
 from functools import wraps
-
-import json
-import requests
-import os
-import jwt
 from datetime import datetime, timedelta
+import os
+import json
 
+from flask import Flask, request
+import requests
+from dotenv import load_dotenv
+import jwt
 import mongoengine
 
-from playlist.models import User, SongData, Friendship, Playlist
-from playlist.helpers import refresh_token, find_user_info
+from playlist.models import User, Playlist
+from playlist.helpers import find_user_info
 from playlist.listening_data import  load_user_data, get_user_genres
-from playlist.friend_requests import send_friend_request, accept_friend_request, get_friend_list, remove_friend_from_database
-from playlist.intersection import get_user_intersection 
-from playlist.playlist_generation import get_recommendations_from_intersection, generate_playlist, get_tracks_from_id, set_playlist_details
+from playlist.friend_requests import (send_friend_request, accept_friend_request,
+                                      get_friend_list, remove_friend_from_database)
+from playlist.intersection import get_user_intersection
+from playlist.playlist_generation import (get_rec_from_intersection, generate_playlist,
+                                          get_tracks_from_id, set_playlist_details)
 
 app = Flask(__name__)
 mongoengine.connect('flaskapp', host=os.getenv('MONGODB_URI'))
@@ -39,22 +40,22 @@ def confirm_user_identity(func):
         user_id = request.args.get("user_id")
         if not user_id:
             user_id = request.form.get("user_id")
-        user = User.objects(spotify_id=user_id).first() 
+        user = User.objects(spotify_id=user_id).first()
         if not user:
             return({"error": "Your token could not be verified"}, 401)
 
         encoded_jwt = request.headers.get("authorization")
         decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
-        if not (user.spotify_id==decoded['id']):
+        if not user.spotify_id == decoded['id']:
             return ({"error": "You are not authorized to perform that action."}, 401)
         else:
             return func(*args, **kws)
     return function_with_identification
-    
+
 def check_for_request_errors(func):
     @wraps(func)
-    def function_with_request_error_handling(*args, **kws):
+    def request_error_handling(*args, **kws):
         try:
             result = func(*args, **kws)
         except requests.exceptions.HTTPError as http_err:
@@ -67,97 +68,93 @@ def check_for_request_errors(func):
             print(err)
         else:
             return result
+    return request_error_handling
 
-@app.route('/',methods=['GET'])
+@app.route('/', methods=['GET'])
 def hello_flask():
-    return ("It's working!")
+    return "It's working!"
 
-@app.route('/login-user',methods=['POST'])
-def login_user(): 
+@app.route('/login-user', methods=['POST'])
+def login_user():
     params = {
-        'client_id': os.getenv('SPOTIFY_CLIENT_ID'), 
-        'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'), 
-        'redirect_uri':'playlistfortwo://login/callback', 
+        'client_id': os.getenv('SPOTIFY_CLIENT_ID'),
+        'client_secret': os.getenv('SPOTIFY_CLIENT_SECRET'),
+        'redirect_uri':'playlistfortwo://login/callback',
         'code': request.form.get('code'),
         'grant_type': 'authorization_code'
-        }
-    
-    result =  requests.post('https://accounts.spotify.com/api/token', data= params)
-    if result.status_code != 200 :
+    }
+
+    result = requests.post('https://accounts.spotify.com/api/token', data=params)
+    if result.status_code != 200:
         return (result.text, result.status_code)
     token = json.loads(result.text)['access_token']
 
-    user_info = requests.get('https://api.spotify.com/v1/me', 
-    headers= {'Authorization': 'Bearer {}'.format(token) }
-    )
-    if user_info.status_code != 200 :
+    user_info = requests.get('https://api.spotify.com/v1/me',
+                             headers={'Authorization': 'Bearer {}'.format(token)})
+
+    if user_info.status_code != 200:
         return (user_info.text, user_info.status_code)
-        
+
     user = User.objects(spotify_id=json.loads(user_info.text)['id']).first()
 
     if not user:
         user = User(
-            name=json.loads(user_info.text)['display_name'], 
+            name=json.loads(user_info.text)['display_name'],
             spotify_id=json.loads(user_info.text)['id'],
             image_links=json.loads(user_info.text)['images'],
-            sp_access_token =json.loads(result.text)['access_token'],
+            sp_access_token=json.loads(result.text)['access_token'],
             friends=[],
             playlists=[],
             sp_refresh_token=json.loads(result.text)['refresh_token']
             )
         user.save()
     else:
-        user.sp_access_token =json.loads(result.text)['access_token']
-        user.sp_refresh_token=json.loads(result.text)['refresh_token']
+        user.sp_access_token = json.loads(result.text)['access_token']
+        user.sp_refresh_token = json.loads(result.text)['refresh_token']
         user.save()
 
     load_user_data(user)
 
-    encoded_jwt =jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow()}, os.getenv('JWT_SECRET'), algorithm='HS256')
+    encoded_jwt = jwt.encode({'id': user.spotify_id, 'iat': datetime.utcnow()},
+                             os.getenv('JWT_SECRET'),
+                             algorithm='HS256')
 
-        
     return (encoded_jwt, 200)
 
-@app.route('/me',methods=['GET'])
+@app.route('/me', methods=['GET'])
 @authorize_user
 def get_logged_in_user_info():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
-    return(find_user_info(decoded['id']))
+    return find_user_info(decoded['id'])
 
-@app.route('/listening-history',methods=['GET'])
+@app.route('/listening-history', methods=['GET'])
 @authorize_user
 @confirm_user_identity
-def get_listening_history():    
+@check_for_request_errors
+def get_listening_history():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
 
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
 
-    try:
-        if not user.song_data.modified or (datetime.utcnow()- user.song_data.modified > timedelta(days=7)):
-            load_user_data(user)
-    except requests.exceptions.HTTPError as http_err:
-            print(http_err)
-    except requests.exceptions.ConnectionError as conn_err:
-            print(conn_err)
-    except requests.exceptions.Timeout as timeout_err:
-            print(timeout_err)
-    except requests.exceptions.RequestException as err:
-            print(err)
-    else:
-        return (user.song_data.to_json(), 200)
+    days_since_update = datetime.utcnow() - user.song_data.modified
 
-@app.route('/request-friend',methods=['POST'])
+    if not user.song_data.modified or (days_since_update > timedelta(days=7)):
+        load_user_data(user)
+
+    return (user.song_data.to_json(), 200)
+
+@app.route('/request-friend', methods=['POST'])
 @authorize_user
 @confirm_user_identity
 def request_friend():
     user_id = request.form.get("user_id")
     friend_id = request.form.get("friend_id")
 
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
     requested = User.objects(spotify_id=friend_id).first()
 
     if not user:
@@ -170,7 +167,7 @@ def request_friend():
     else:
         return(F'Could not send friend request to #{friend_id}.', 400)
 
-@app.route('/accept-friend',methods=['POST'])
+@app.route('/accept-friend', methods=['POST'])
 @authorize_user
 @confirm_user_identity
 def accept_friend():
@@ -182,7 +179,7 @@ def accept_friend():
     else:
         return(F'Could not add user #{friend_id} as a friend.', 400)
 
-@app.route('/remove-friend',methods=['POST'])
+@app.route('/remove-friend', methods=['POST'])
 @authorize_user
 @confirm_user_identity
 def remove_friend():
@@ -194,11 +191,11 @@ def remove_friend():
     else:
         return(F'Could not remove user #{friend_id} from friends.', 400)
 
-@app.route('/friends',methods=['GET'])
+@app.route('/friends', methods=['GET'])
 @authorize_user
 def get_friends():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
 
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
@@ -210,20 +207,20 @@ def get_friends():
     else:
         return(json.dumps(response), 200)
 
-@app.route('/user',methods=['GET'])
+@app.route('/user', methods=['GET'])
 @authorize_user
 def get__user_info():
     user_id = request.args.get("user_id")
-    return ((find_user_info(user_id)))
+    return find_user_info(user_id)
 
-@app.route('/users',methods=['GET'])
+@app.route('/users', methods=['GET'])
 @authorize_user
 def all_users():
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv('JWT_SECRET'), algorithm='HS256')
 
     user_uid = decoded['id']
-    app_uid=os.getenv('SPOTIFY_USER_ID')
+    app_uid = os.getenv('SPOTIFY_USER_ID')
 
     try:
         response = User.objects(spotify_id__nin=[user_uid, app_uid]).only('name', 'spotify_id')
@@ -232,11 +229,11 @@ def all_users():
     else:
         return(response.to_json(), 200)
 
-@app.route('/genres',methods=['GET'])
+@app.route('/genres', methods=['GET'])
 @authorize_user
 def user_genres():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
 
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
@@ -253,18 +250,18 @@ def user_genres():
 @check_for_request_errors
 def find_intersection():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
     friend_id = request.args.get("friend_id")
-    friend = User.objects(spotify_id=friend_id).first() 
+    friend = User.objects(spotify_id=friend_id).first()
 
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
 
-    if datetime.utcnow() - user.song_data.modified > timedelta(days=7):  
+    if datetime.utcnow() - user.song_data.modified > timedelta(days=7):
         load_user_data(user)
-    if datetime.utcnow() - friend.song_data.modified > timedelta(days=7): 
+    if datetime.utcnow() - friend.song_data.modified > timedelta(days=7):
         load_user_data(friend)
     intersection = get_user_intersection(user, friend)
     return(json.dumps(intersection), 200)
@@ -275,18 +272,18 @@ def find_intersection():
 @check_for_request_errors
 def find_reccomendations():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
     friend_id = request.args.get("friend_id")
-    friend = User.objects(spotify_id=friend_id).first() 
-    
+    friend = User.objects(spotify_id=friend_id).first()
+
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
 
     intersection = get_user_intersection(user, friend)
-    result = get_recommendations_from_intersection(intersection)
-    return(result)
+    result = get_rec_from_intersection(intersection)
+    return result
 
 @app.route('/new-playlist', methods=['POST'])
 @authorize_user
@@ -294,7 +291,7 @@ def find_reccomendations():
 @check_for_request_errors
 def create_new_playlist():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
     friend_id = request.args.get("friend_id")
     friend = User.objects(spotify_id=friend_id).first()
 
@@ -308,23 +305,23 @@ def create_new_playlist():
         return ({'error':F'could not find user with id {user_id}'}, 404)
     elif not friend:
         return ({'error':F'could not find user with id {friend_id}'}, 404)
-    
+
     playlist = generate_playlist(user, friend, filter_explicit, seeds, features)
 
     new_playlist = Playlist(
-        uri= playlist['uri'],
+        uri=playlist['uri'],
         description=playlist['description'],
         seeds=playlist['seeds'],
         owners=[user_id, friend_id]
     )
-    
+
     user.playlists.append(new_playlist)
     friend.playlists.append(new_playlist)
     print(new_playlist.seeds)
     user.save()
     friend.save()
     if new_playlist in user.playlists and new_playlist in friend.playlists:
-        return (json.dumps(new_playlist.to_json()))
+        return (json.dumps(new_playlist.to_json()), 200)
     else:
         return (json.dumps({"error": "failed to save playlist"}), 400)
 
@@ -333,28 +330,28 @@ def create_new_playlist():
 @confirm_user_identity
 def get_playlists():
     user_id = request.args.get("user_id")
-    user = User.objects(spotify_id=user_id).first() 
+    user = User.objects(spotify_id=user_id).first()
     friend_id = request.args.get("friend_id")
 
     if not user:
         return ({'error':F'could not find user with id {user_id}'}, 404)
-    
+
     if friend_id:
         playlists = [json.loads(playlist.to_json()) for playlist in user.playlists if friend_id in playlist.owners]
     else:
         playlists = [json.loads(playlist.to_json()) for playlist in user.playlists]
     return (json.dumps(playlists), 200)
 
-@app.route('/playlist', methods=['GET']) 
-@authorize_user 
+@app.route('/playlist', methods=['GET'])
+@authorize_user
 @check_for_request_errors
 def get_playlist_tracks():
-        playlist_id= request.args.get("playlist_id")
-        track_list = get_tracks_from_id(playlist_id)
-        return (json.dumps(track_list), 200)
+    playlist_id = request.args.get("playlist_id")
+    track_list = get_tracks_from_id(playlist_id)
+    return (json.dumps(track_list), 200)
 
-@app.route('/edit-playlist', methods=['POST']) 
-@authorize_user 
+@app.route('/edit-playlist', methods=['POST'])
+@authorize_user
 @check_for_request_errors
 def edit_playlist():
     encoded_jwt = request.headers.get("authorization")
@@ -365,7 +362,7 @@ def edit_playlist():
     playlist_uri = request.form.get("playlist_uri")
     if not playlist_uri:
         return (json.dumps({'error':'playlist uri is a required field'}), 400)
-    
+
     friend_id = request.form.get('friendID')
 
     description = request.form.get('description')
@@ -373,9 +370,8 @@ def edit_playlist():
     name = request.form.get('name')
 
     if description or name:
-         success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
-        if success:
-            return(json.dumps({'success': F'Successfully updated details for playlist {playlist_uri}'}))
-        else:
-            return (json.dumps({"error": "failed to update playlist details"}), 400)
-
+        success = set_playlist_details(description, name, playlist_uri, user_id, friend_id)
+    if success:
+        return(json.dumps({'success': F'Successfully updated details for  {playlist_uri}'}), 200)
+    else:
+        return (json.dumps({"error": "failed to update playlist details"}), 400)
