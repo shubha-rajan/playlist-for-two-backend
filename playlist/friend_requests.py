@@ -1,5 +1,6 @@
 from .models import User, Friendship
 
+
 def send_friend_request(user, requested):
     outgoing_request = Friendship(
         status='requested',
@@ -26,6 +27,7 @@ def send_friend_request(user, requested):
     else:
         return False
 
+
 def accept_friend_request(user_id, friend_id):
     try:
         User.objects(spotify_id=user_id,
@@ -45,34 +47,41 @@ def accept_friend_request(user_id, friend_id):
 
     return True
 
+
 def remove_friend_from_database(user_id, friend_id):
     print(friend_id)
     try:
-        User.objects(spotify_id=user_id).update_one(pull__friends__friend_id=friend_id)
+        User.objects(spotify_id=user_id).update_one(
+            pull__friends__friend_id=friend_id)
 
     except Exception as err:
         print(err)
         return False
 
     try:
-        User.objects(spotify_id=friend_id).update_one(pull__friends__friend_id=user_id)
+        User.objects(spotify_id=friend_id).update_one(
+            pull__friends__friend_id=user_id)
     except Exception as err:
         print(err)
         return False
 
     return True
 
+
 def get_friend_list(user):
-    incoming_requests = [friend.to_json() for friend in user.friends if friend.status == 'pending']
-    sent_requests = [friend.to_json() for friend in user.friends if friend.status == 'requested']
-    accepted_requests = [friend.to_json() for friend in user.friends if friend.status == 'accepted']
+    incoming_requests = [friend.to_json()
+                         for friend in user.friends if friend.status == 'pending']
+    sent_requests = [friend.to_json()
+                     for friend in user.friends if friend.status == 'requested']
+    accepted_requests = [friend.to_json()
+                         for friend in user.friends if friend.status == 'accepted']
 
     response = {
-        "user":user.spotify_id,
+        "user": user.spotify_id,
         "friends": {
-            "incoming":incoming_requests,
-            "sent":sent_requests,
-            "accepted":accepted_requests,
+            "incoming": incoming_requests,
+            "sent": sent_requests,
+            "accepted": accepted_requests,
         }
     }
     return response
