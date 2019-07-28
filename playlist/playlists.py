@@ -131,6 +131,6 @@ def set_playlist_details(description, name, playlist_uri, user_id, friend_id):
 
 def delete_from_user_playlists(user_id, playlist_uri):
     User.objects(spotify_id=user_id).update_one(
-        pull__playlists__playlist_uri=playlist_uri)
+        pull__playlists__uri=playlist_uri)
 
     return True
