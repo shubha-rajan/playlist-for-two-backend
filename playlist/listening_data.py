@@ -28,9 +28,9 @@ def get_listening_data(user, data_type):
             url = response.json()['next']
 
 
-    if data_type == 'followed_artists' or data_type=='top_artists':
+    if data_type == 'followed_artists' or data_type == 'top_artists':
         returned_list = [clean_artist_data(artist) for artist in returned_list]
-    elif data_type == 'saved_songs' or data_type=='top_songs':
+    elif data_type == 'saved_songs' or data_type == 'top_songs':
         returned_list = [clean_song_data(track) for track in returned_list]
 
     return returned_list

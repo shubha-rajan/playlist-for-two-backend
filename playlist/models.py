@@ -1,7 +1,8 @@
 """Schema for mongoengine"""
 
 from datetime import datetime
-from mongoengine import *
+from mongoengine import (Document, EmbeddedDocument,
+                         DateTimeField, ListField, DictField, EmbeddedDocumentField, StringField)
 from mongoengine import signals
 
 

@@ -68,7 +68,7 @@ class TestFindIntersection(TestCase):
                      'song_data': cls.song_data}
         cls.user2 = {"name":"Helga Schuster",
                      "spotify_id":"70bb54ad-444b-4e1f-a0a6-033d04e1eab2",
-                     "friends":[],"image_links":[{"url":"http://placekitten.com/200/300"}],
+                     "friends":[], "image_links":[{"url":"http://placekitten.com/200/300"}],
                      'song_data': cls.song_data}
 
     def test_find_common_artists(self):
