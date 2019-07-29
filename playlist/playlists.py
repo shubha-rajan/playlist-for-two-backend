@@ -111,7 +111,7 @@ def set_playlist_details(description, name, playlist_uri, user_id, friend_id):
 
     if response.status_code != 200:
         response.raise_for_status()
-
+    print(friend_id)
     if name:
         User.objects(spotify_id=user_id,
                      playlists__uri=playlist_uri).update(set__playlists__S__description__name=name)
@@ -120,10 +120,10 @@ def set_playlist_details(description, name, playlist_uri, user_id, friend_id):
 
     if description:
         User.objects(spotify_id=user_id,
-                     playlists__uri=playlist_uri).update(
+                     playlists__uri=playlist_uri).update_one(
                          set__playlists__S__description__description=description)
         User.objects(spotify_id=friend_id,
-                     playlists__uri=playlist_uri).update(
+                     playlists__uri=playlist_uri).update_one(
                          set__playlists__S__description__description=description)
 
     return True

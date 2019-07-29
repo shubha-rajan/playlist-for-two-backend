@@ -424,7 +424,7 @@ def edit_playlist():
     if not playlist_uri:
         return (json.dumps({'error': 'playlist uri is a required field'}), 400)
 
-    friend_id = request.form.get('friendID')
+    friend_id = request.form.get('friend_id')
 
     description = request.form.get('description')
 
