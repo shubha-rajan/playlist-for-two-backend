@@ -45,7 +45,7 @@ def send_recommendation_request(request_url, token, filter_explicit):
         if response.status_code != 200:
             response.raise_for_status()
         tracks = response.json()['tracks']
-        return tracks
+    return tracks
 
 
 def get_rec_from_seeds(seeds, features, filter_explicit=False):
