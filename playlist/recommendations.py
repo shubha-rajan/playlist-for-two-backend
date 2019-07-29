@@ -25,14 +25,19 @@ def get_seeds(intersection):
 def get_filtered_recommendations(url, token):
     tracks = []
 
-    while len(tracks) < 20:
-        response = requests.get(
-            url, headers={'Authorization': F'Bearer {token}'})
-        if response.status_code != 200:
-            response.raise_for_status()
-        tracks += [track for track in response.json()['tracks']
-                   if not track['explicit']]
-    return random.sample(tracks, 20)
+    response = requests.get(
+        F"{url}&limit=100", headers={'Authorization': F'Bearer {token}'})
+    if response.status_code != 200:
+        response.raise_for_status()
+    tracks += [track for track in response.json()['tracks']
+               if not track['explicit']]
+
+    result = []
+    if len(tracks) > 20:
+        result = random.sample(tracks, 20)
+    else:
+        result = tracks
+    return result
 
 
 def send_recommendation_request(request_url, token, filter_explicit):
