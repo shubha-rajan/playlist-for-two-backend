@@ -66,13 +66,13 @@ def check_for_request_errors(func):
         try:
             result = func(*args, **kws)
         except requests.exceptions.HTTPError as http_err:
-            print(http_err)
+            return ({"error": F"There was a problem with your request: {http_err}"}, 400)
         except requests.exceptions.ConnectionError as conn_err:
-            print(conn_err)
+            return ({"error": F"There was a problem with your request: {conn_err}"}, 503)
         except requests.exceptions.Timeout as timeout_err:
-            print(timeout_err)
+            return ({"error": F"There was a problem with your request: {timeout_err}"}, 408)
         except requests.exceptions.RequestException as err:
-            print(err)
+            return ({"error": F"There was a problem with your request: {err}"}, 400)
         else:
             return result
     return request_error_handling
