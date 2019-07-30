@@ -109,6 +109,11 @@ def hello_flask():
     return "It's working!"
 
 
+@app.route('/coffee', methods=['GET'])
+def im_a_teapot():
+    return ({"error": "I can't brew coffee because I'm a teapot!"}, 418)
+
+
 @check_for_db_errors
 @app.route('/login-user', methods=['POST'])
 def login_user():
