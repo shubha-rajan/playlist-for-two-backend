@@ -1,4 +1,5 @@
 from .models import User, Friendship
+from mongoengine import Q
 
 
 def send_friend_request(user, requested):
@@ -29,17 +30,16 @@ def send_friend_request(user, requested):
 
 
 def accept_friend_request(user_id, friend_id):
-    User.objects(spotify_id=user_id,
-                 friends__friend_id=friend_id,
-                 friends__status='pending').update_one(set__friends__S__status='accepted')
+    User.objects(Q(spotify_id=user_id) &
+                 Q(friends__friend_id=friend_id) &
+                 Q(friends__status='pending')).update_one(set__friends__S__status='accepted')
 
-    User.objects(spotify_id=friend_id,
-                 friends__friend_id=user_id,
-                 friends__status='requested').update_one(set__friends__S__status='accepted')
+    User.objects(Q(spotify_id=friend_id) &
+                 (Q(friends__friend_id=user_id) &
+                  Q(friends__status='requested'))).update_one(set__friends__S__status='accepted')
 
 
 def remove_friend_from_database(user_id, friend_id):
-    print(friend_id)
 
     User.objects(spotify_id=user_id).update_one(
         pull__friends__friend_id=friend_id)
