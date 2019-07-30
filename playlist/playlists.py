@@ -114,9 +114,9 @@ def set_playlist_details(description, name, playlist_uri, user_id, friend_id):
     print(friend_id)
     if name:
         User.objects(spotify_id=user_id,
-                     playlists__uri=playlist_uri).update(set__playlists__S__description__name=name)
+                     playlists__uri=playlist_uri).update_one(set__playlists__S__description__name=name)
         User.objects(spotify_id=friend_id,
-                     playlists__uri=playlist_uri).update(set__playlists__S__description__name=name)
+                     playlists__uri=playlist_uri).update_one(set__playlists__S__description__name=name)
 
     if description:
         User.objects(spotify_id=user_id,

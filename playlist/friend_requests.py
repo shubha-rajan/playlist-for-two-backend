@@ -31,11 +31,11 @@ def send_friend_request(user, requested):
 def accept_friend_request(user_id, friend_id):
     User.objects(spotify_id=user_id,
                  friends__friend_id=friend_id,
-                 friends__status='pending').update(set__friends__S__status='accepted')
+                 friends__status='pending').update_one(set__friends__S__status='accepted')
 
     User.objects(spotify_id=friend_id,
                  friends__friend_id=user_id,
-                 friends__status='requested').update(set__friends__S__status='accepted')
+                 friends__status='requested').update_one(set__friends__S__status='accepted')
 
 
 def remove_friend_from_database(user_id, friend_id):
