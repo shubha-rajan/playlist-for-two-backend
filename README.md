@@ -33,3 +33,5 @@ MONGODB_URI={ the uri to connect to your database }
 `db.user.insertOne({name: "Playlist for Two", id: {your user id}, sp_access_token: {your access token} , sp_refresh_token:{your refresh token})`
 - Run your server, if running locally
 - Make sure the [Mobile Client](https://github.com/shubha-rajan/playlist-for-two-frontend/) is set up and run the app from a phone.
+
+
