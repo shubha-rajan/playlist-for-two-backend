@@ -361,16 +361,15 @@ def get_playlists():
     return (json.dumps(playlists), 200)
 
 
-@app.route('/playlist', methods=['GET'])
+@app.route('/playlist/<playlist_id>', methods=['GET'])
 @authorize_user
 @check_for_request_errors
-def get_playlist_tracks():
-    playlist_id = request.args.get("playlist_id")
+def get_playlist_tracks(playlist_id):
     track_list = get_tracks_from_id(playlist_id)
     return (json.dumps(track_list), 200)
 
 
-@app.route('/new-playlist', methods=['POST'])
+@app.route('/playlist', methods=['POST'])
 @authorize_user
 @confirm_user_identity
 @check_for_request_errors
@@ -414,7 +413,7 @@ def create_new_playlist():
         return (json.dumps({"error": "failed to save playlist"}), 400)
 
 
-@app.route('/edit-playlist', methods=['POST'])
+@app.route('/playlist', methods=['PATCH'])
 @authorize_user
 @check_for_request_errors
 @check_for_db_errors
@@ -444,20 +443,21 @@ def edit_playlist():
         return (json.dumps({"error": "failed to update playlist details"}), 400)
 
 
-@app.route('/delete-playlist', methods=['POST'])
+@app.route('/playlist/<playlist_id>', methods=['DELETE'])
 @authorize_user
 @check_for_request_errors
 @check_for_db_errors
-def delete_playlist():
+def delete_playlist(playlist_id):
     encoded_jwt = request.headers.get("authorization")
     decoded = jwt.decode(encoded_jwt, os.getenv(
         'JWT_SECRET'), algorithm='HS256', audience="client")
 
     user_id = decoded['id']
 
-    playlist_uri = request.form.get("playlist_uri")
-    if not playlist_uri:
-        return (json.dumps({'error': 'playlist_uri is a required field'}), 400)
+    if not playlist_id:
+        return (json.dumps({'error': 'playlist_id is a required field'}), 400)
+
+    playlist_uri = F"spotify:playlist:{playlist_id}"
 
     success = delete_from_user_playlists(user_id, playlist_uri)
     if success:
